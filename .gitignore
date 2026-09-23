@@ -1,0 +1,15 @@
+# Dataset and generated artifacts are not redistributed in this repository.
+/ml-1m/
+/data/
+/runs/
+/.runtime/
+*.dat
+*.jsonl
+*.zip
+
+# Local environments and editor/system files.
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store

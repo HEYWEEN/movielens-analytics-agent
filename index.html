@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MovieLens 数据治理 Agent</title>
+  <style>
+    :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #15232c; background: #f3f6f5; }
+    * { box-sizing: border-box; } body { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; }
+    h1 { font-size: 27px; margin: 0 0 8px; } h2 { font-size: 19px; margin: 0 0 14px; }
+    p { color: #52636d; line-height: 1.6; } .card { background: white; border: 1px solid #dbe5e2; border-radius: 14px; padding: 22px; margin-top: 18px; box-shadow: 0 4px 20px #1933270b; }
+    textarea { width: 100%; min-height: 82px; border: 1px solid #becdc8; border-radius: 10px; padding: 13px; font: inherit; resize: vertical; }
+    button { background: #126955; border: 0; border-radius: 8px; color: white; font: inherit; padding: 10px 18px; cursor: pointer; margin-top: 10px; }
+    button:disabled { opacity: .55; cursor: wait; } .muted { color: #687a83; } .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px; }
+    .metric { border: 1px solid #dbe5e2; border-radius: 10px; padding: 14px; } .metric strong { display:block; margin-bottom: 8px; }
+    .value { font-size: 21px; font-weight: 700; } .good { color: #126955; } .bad { color: #b04435; }
+    table { border-collapse: collapse; width: 100%; } th,td { border-bottom: 1px solid #e5ece9; padding: 10px; text-align: left; }
+    .scroll { overflow-x: auto; } .log { background: #f6f9f8; border-radius: 9px; padding: 12px; white-space: pre-wrap; line-height: 1.55; }
+    a { color: #126955; } details { margin-top: 12px; } li { margin: 7px 0; }
+  </style>
+</head>
+<body>
+  <h1>MovieLens 数据治理 Agent</h1>
+  <p>输入清洗与评估请求，查看实际运行状态、数据处置和五维质量评分。当前执行引擎会显示在任务状态中。</p>
+  <section class="card">
+    <h2>发起任务或追问</h2>
+    <textarea id="prompt">请使用默认规则清洗 MovieLens 1M，评估清洗前后的五个质量维度，并说明异常处置。</textarea>
+    <div class="grid" style="margin-top:12px">
+      <label>数据版本<br><select id="dataVersion"></select></label>
+      <label>规则版本<br><select id="ruleVersion"></select></label>
+      <label>评分配置<br><select id="scoreConfig"></select></label>
+    </div>
+    <div><button id="send">发送</button></div>
+    <p class="muted">完成后可追问“评分依据是什么”“隔离了哪些记录”“T1/T2 是什么”。目前每类版本只登记了一种可执行配置。</p>
+    <div class="log" id="reply">等待请求。</div>
+  </section>
+  <section class="card">
+    <h2>执行状态</h2>
+    <div id="status" class="muted">尚无任务。</div>
+    <div id="stageHistory" class="muted"></div>
+  </section>
+  <section class="card" id="results" hidden>
+    <h2>五维评分</h2><div id="scores" class="grid"></div>
+    <h2 style="margin-top:26px">结果解释</h2><div id="explanations"></div>
+    <h2 style="margin-top:26px">数据量</h2><div id="counts" class="scroll"></div>
+    <h2 style="margin-top:26px">异常处置</h2><div id="issues"></div>
+    <details><summary>评分公式、适用范围与局限</summary><div id="methods"></div><div id="limitations"></div></details>
+    <p id="versions" class="muted"></p>
+    <details><summary>清洗数据样例（每表前 10 条）</summary><div id="samples" class="log">正在读取…</div></details>
+    <a id="reportLink" target="_blank">查看完整 JSON 报告</a> · <a id="uncertainLink" target="_blank">查看未核验冲突明细</a>
+  </section>
+<script>
+  let taskId = null, timer = null;
+  const $ = id => document.getElementById(id);
+  const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  async function getJson(url, options) { const r = await fetch(url, options); const data = await r.json(); if (!r.ok) throw Error(data.error || r.statusText); return data; }
+  async function send() {
+    $('send').disabled = true;
+    try {
+      const data = await getJson('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:$('prompt').value,task_id:taskId,data_version:$('dataVersion').value,rule_version:$('ruleVersion').value,score_config_version:$('scoreConfig').value})});
+      $('reply').textContent = data.reply;
+      if (data.task_id) { taskId = data.task_id; await poll(); if (!timer) timer = setInterval(poll, 2500); }
+    } catch (e) { $('reply').textContent = '请求失败：' + e.message; }
+    finally { $('send').disabled = false; }
+  }
+  async function poll() {
+    if (!taskId) return;
+    try {
+      const state = await getJson('/api/tasks/' + encodeURIComponent(taskId));
+      $('status').textContent = `任务 ${taskId} · ${state.status} · 阶段 ${state.stage || '—'} · ${state.progress} · 引擎 ${state.engine}` + (state.error ? ` · ${state.error}` : '');
+      $('stageHistory').innerHTML = (state.events || []).map(event => `<p>${esc(event.message)}</p>`).join('');
+      if (state.status === 'complete') { clearInterval(timer); timer = null; render(await getJson('/api/tasks/' + encodeURIComponent(taskId) + '/report')); }
+      if (state.status === 'failed') { clearInterval(timer); timer = null; }
+    } catch (e) { $('status').textContent = '状态读取失败：' + e.message; clearInterval(timer); timer = null; }
+  }
+  function render(report) {
+    $('results').hidden = false;
+    $('scores').innerHTML = Object.entries(report.raw.scores).map(([name,before]) => {
+      const after = report.clean.scores[name], delta = before == null || after == null ? null : after-before;
+      const rawEvidence = report.score_evidence?.raw?.[name], cleanEvidence = report.score_evidence?.clean?.[name];
+      const evidence = rawEvidence && cleanEvidence ? `<p class="muted">分子/分母：${rawEvidence.numerator}/${rawEvidence.denominator} → ${cleanEvidence.numerator}/${cleanEvidence.denominator}</p>` : '';
+      return `<div class="metric"><strong>${esc(name)}</strong><span class="value">${before ?? '无法评价'} → ${after ?? '无法评价'}</span><p class="${delta > 0 ? 'good' : delta < 0 ? 'bad' : ''}">变化：${delta == null ? '—' : delta.toFixed(3)}</p>${evidence}</div>`;
+    }).join('');
+    const interpretation = report.interpretation || {};
+    const audit = report.reference_audit;
+    $('explanations').innerHTML = '<ul>' + Object.entries(report.raw.scores).map(([name]) => `<li><strong>${esc(name)}</strong>：${esc(interpretation[name] || '详见评估报告。')}</li>`).join('') + '</ul>' +
+      '<p><strong>仍未解决：</strong>' + esc((interpretation.unresolved || report.limitations).join('；')) + '</p>' +
+      (audit ? `<p><strong>官方基准历史对照：</strong>评分缺失 ${audit.ratings_missing}、额外 ${audit.ratings_extra}；用户内容不同 ${audit.users_content_mismatched}、电影内容不同 ${audit.movies_content_mismatched}。这项对照未在本次任务中重算；详见项目文档“${esc(audit.details)}”。</p>` : '');
+    $('counts').innerHTML = '<table><tr><th>数据表</th><th>清洗前</th><th>清洗后</th><th>减少</th></tr>' +
+      ['users','movies','ratings'].map(t => `<tr><td>${esc(t)}</td><td>${report.raw.counts[t].rows}</td><td>${report.clean.counts[t].rows}</td><td>${report.raw.counts[t].rows-report.clean.counts[t].rows}</td></tr>`).join('') + '</table>';
+    $('issues').innerHTML = '<div class="scroll"><table><tr><th>原因</th><th>数量</th></tr>' + Object.entries(report.issues).map(([name,n]) => `<tr><td>${esc(name)}</td><td>${n}</td></tr>`).join('') + '</table></div>' +
+      `<p>规范化后最终保留 ${report.disposition?.repaired_retained ?? '—'} 条；去重 ${report.disposition?.exact_duplicates ?? '—'} 条；冲突隔离 ${report.disposition?.conflicting_rows ?? '—'} 条；其他无效或孤立记录隔离 ${report.disposition?.invalid_or_orphan_rows ?? '—'} 条。</p>` +
+      `<p><strong>同频冲突保留但未核验：${report.disposition?.retained_unverified_ties ?? '—'} 条</strong>（用户 ${report.unresolved_ties?.by_table?.users ?? '—'}、电影 ${report.unresolved_ties?.by_table?.movies ?? '—'}、评分 ${report.unresolved_ties?.by_table?.ratings ?? '—'}）。这些属于保留行，不是“已修复”或额外删除的行；Accurate 已据此扣分。</p>` +
+      `<p>去重前规范化的输入行：用户 ${report.normalized_records.users}、电影 ${report.normalized_records.movies}、评分 ${report.normalized_records.ratings} 条。这不是最终保留的修复行数。</p>` +
+      '<details><summary>代表性记录</summary><ul>' + report.examples.map(x => `<li>${esc(x.table)} · ${esc(x.reason)} · ${esc(x.record)} (${x.count})</li>`).join('') + '</ul></details>';
+    $('methods').innerHTML = Object.entries(report.quality_method || {}).map(([name,item]) => `<p><strong>${esc(name)}</strong>：${esc(item.formula)}<br>范围：${esc(item.scope)}；局限：${esc(item.limitation)}</p>`).join('');
+    $('limitations').innerHTML = '<ul>' + report.limitations.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+    $('versions').textContent = `原始数据版本 ${report.raw_data_version} · 清洗数据版本 ${report.clean_data_version} · 规则 ${report.rule_version} · 评分配置 ${report.score_config_version || '未记录'} · T1 ${report.time_boundaries.T1_utc} · T2 ${report.time_boundaries.T2_utc} · 引擎 ${report.engine}${report.hadoop_mode ? ' (' + report.hadoop_mode + ')' : ''}`;
+    $('reportLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/report';
+    $('uncertainLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/unresolved';
+    $('uncertainLink').hidden = !report.unresolved_ties;
+    Promise.all(['users','movies','ratings'].map(t => getJson('/api/tasks/' + encodeURIComponent(taskId) + '/sample?table=' + t)))
+      .then(items => $('samples').textContent = items.map(x => x.table + '\n' + x.sample.join('\n')).join('\n\n'))
+      .catch(e => $('samples').textContent = '样例读取失败：' + e.message);
+  }
+  $('send').addEventListener('click', send);
+  getJson('/api/config').then(config => {
+    for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) {
+      $(id).innerHTML = config[key].map(value => `<option value="${esc(value)}" ${value === config.defaults[selected] ? 'selected' : ''}>${esc(value)}</option>`).join('');
+    }
+  }).catch(e => $('reply').textContent = '配置读取失败：' + e.message);
+  if (localStorage.lab2TaskId) { taskId = localStorage.lab2TaskId; poll(); }
+  setInterval(() => { if (taskId) localStorage.lab2TaskId = taskId; }, 1000);
+</script>
+</body>
+</html>
