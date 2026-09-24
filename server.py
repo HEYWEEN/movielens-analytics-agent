@@ -12,34 +12,45 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from runner import DEFAULT_DATA, DEFAULT_RUNS, REGISTRY, resolve_configuration, run_hadoop, run_local
+from movielens_agent.storage.task_store import TaskStore
+from movielens_agent.storage.artifacts import verify_manifest
+from movielens_agent.tools.registry import get_tool
 
 HERE = Path(__file__).resolve().parent
 ENGINE = os.environ.get("LAB2_ENGINE", "local")
 ENGINE_LABEL = "hadoop-standalone-local" if ENGINE == "hadoop" and os.environ.get("LAB2_HADOOP_LOCAL") == "1" else ENGINE
 TASKS = {}
 LOCK = threading.Lock()
+TASK_STORE = TaskStore(DEFAULT_RUNS / "tasks.sqlite3")
+RUN_SLOT = threading.BoundedSemaphore(1)
 
 
 def latest_task():
-    with LOCK:
-        return next(reversed(TASKS), None) if TASKS else None
+    return TASK_STORE.latest_id()
 
 
 def tool_run_pipeline(task_id, configuration):
-    with LOCK:
-        TASKS[task_id].update(status="running", progress="正在准备任务")
-    try:
-        report = (run_hadoop if ENGINE == "hadoop" else run_local)(
-            DEFAULT_DATA, DEFAULT_RUNS, task_id, **configuration,
-            on_progress=lambda stage, progress: set_progress(task_id, stage, progress))
+    with RUN_SLOT:
         with LOCK:
-            TASKS[task_id].update(status="complete", progress="完成", report=report)
-    except Exception as exc:
-        with LOCK:
-            stage = TASKS[task_id].get("stage", "unknown")
-            TASKS[task_id].update(status="failed", progress=f"{stage} 阶段失败",
-                                  error=str(exc).splitlines()[0], failed_stage=stage,
-                                  detail=traceback.format_exc(limit=3))
+            TASKS[task_id].update(status="running", progress="正在准备任务")
+            TASK_STORE.update(task_id, status="running", progress="正在准备任务")
+        try:
+            get_tool("governance.clean_and_assess")
+            report = (run_hadoop if ENGINE == "hadoop" else run_local)(
+                DEFAULT_DATA, DEFAULT_RUNS, task_id, **configuration,
+                on_progress=lambda stage, progress: set_progress(task_id, stage, progress))
+            verify_manifest(DEFAULT_RUNS / task_id)
+            with LOCK:
+                TASKS[task_id].update(status="complete", progress="完成", report=report)
+                TASK_STORE.update(task_id, status="complete", progress="完成")
+        except Exception as exc:
+            with LOCK:
+                stage = TASKS[task_id].get("stage", "unknown")
+                changes = {"status": "failed", "progress": f"{stage} 阶段失败",
+                           "error": str(exc).splitlines()[0], "failed_stage": stage,
+                           "detail": traceback.format_exc(limit=3)}
+                TASKS[task_id].update(changes)
+                TASK_STORE.update(task_id, **changes)
 
 
 def tool_get_status(task_id):
@@ -47,6 +58,9 @@ def tool_get_status(task_id):
         task = TASKS.get(task_id)
         if task:
             return {k: v for k, v in task.items() if k != "report"}
+    stored = TASK_STORE.get(task_id)
+    if stored:
+        return stored
     report = tool_get_report(task_id)
     if not report:
         return None
@@ -62,6 +76,7 @@ def set_progress(task_id, stage, progress):
             TASKS[task_id].setdefault("events", []).append({
                 "stage": stage, "message": progress,
                 "at_utc": datetime.now(timezone.utc).isoformat()})
+            TASK_STORE.update(task_id, stage=stage, progress=progress, events=TASKS[task_id]["events"])
 
 
 def tool_get_report(task_id):
@@ -179,6 +194,7 @@ def agent_chat(message, task_id=None, supplied_configuration=None):
             TASKS[task_id] = {"task_id": task_id, "status": "queued", "progress": "等待运行",
                               "stage": "queued", "events": [], "engine": ENGINE_LABEL,
                               "configuration": configuration}
+            TASK_STORE.put(TASKS[task_id])
         threading.Thread(target=tool_run_pipeline, args=(task_id, configuration), daemon=True).start()
         return {"reply": f"已启动任务 {task_id}，执行引擎：{ENGINE_LABEL}。", "task_id": task_id}
     if not task_id:
@@ -231,6 +247,18 @@ class Handler(BaseHTTPRequestHandler):
         if len(pieces) == 4 and pieces[:2] == ["api", "tasks"] and pieces[3] == "report":
             report = tool_get_report(pieces[2])
             self.send_json(report or {"error": "report not ready"}, 200 if report else 404)
+            return
+        if len(pieces) == 4 and pieces[:2] == ["api", "tasks"] and pieces[3] == "manifest":
+            task_id = pieces[2]
+            if not re.fullmatch(r"[0-9a-f]{12}", task_id):
+                self.send_json({"error": "invalid task id"}, 400)
+                return
+            try:
+                self.send_json(verify_manifest(DEFAULT_RUNS / task_id))
+            except FileNotFoundError:
+                self.send_json({"error": "manifest not ready"}, 404)
+            except (ValueError, KeyError, json.JSONDecodeError) as exc:
+                self.send_json({"error": str(exc)}, 409)
             return
         if len(pieces) == 4 and pieces[:2] == ["api", "tasks"] and pieces[3] == "unresolved":
             task_id = pieces[2]

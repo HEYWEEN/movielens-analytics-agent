@@ -46,7 +46,7 @@
     <details><summary>评分公式、适用范围与局限</summary><div id="methods"></div><div id="limitations"></div></details>
     <p id="versions" class="muted"></p>
     <details><summary>清洗数据样例（每表前 10 条）</summary><div id="samples" class="log">正在读取…</div></details>
-    <a id="reportLink" target="_blank">查看完整 JSON 报告</a> · <a id="uncertainLink" target="_blank">查看未核验冲突明细</a>
+    <a id="reportLink" target="_blank">查看完整 JSON 报告</a> · <a id="manifestLink" target="_blank">查看产物校验清单</a> · <a id="uncertainLink" target="_blank">查看未核验冲突明细</a>
   </section>
 <script>
   let taskId = null, timer = null;
@@ -96,6 +96,7 @@
     $('limitations').innerHTML = '<ul>' + report.limitations.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
     $('versions').textContent = `原始数据版本 ${report.raw_data_version} · 清洗数据版本 ${report.clean_data_version} · 规则 ${report.rule_version} · 评分配置 ${report.score_config_version || '未记录'} · T1 ${report.time_boundaries.T1_utc} · T2 ${report.time_boundaries.T2_utc} · 引擎 ${report.engine}${report.hadoop_mode ? ' (' + report.hadoop_mode + ')' : ''}`;
     $('reportLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/report';
+    $('manifestLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/manifest';
     $('uncertainLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/unresolved';
     $('uncertainLink').hidden = !report.unresolved_ties;
     Promise.all(['users','movies','ratings'].map(t => getJson('/api/tasks/' + encodeURIComponent(taskId) + '/sample?table=' + t)))

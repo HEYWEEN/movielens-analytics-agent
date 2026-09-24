@@ -1,6 +1,7 @@
 """Run the same pipeline locally for development or as a real Hadoop job."""
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -11,6 +12,7 @@ import uuid
 from pathlib import Path
 
 from pipeline import RULE_VERSION, SCORE_CONFIG_VERSION, process, version_for_files
+from movielens_agent.storage.artifacts import file_sha256, publish_manifest
 
 BASE = Path(__file__).resolve().parent
 DEFAULT_DATA = BASE.parent / "ml-1m"
@@ -72,11 +74,18 @@ def save_output(lines, output_dir, metadata):
     finally:
         for handle in handles.values():
             handle.close()
+    for table in ("users", "movies", "ratings"):
+        (output_dir / names[table]).touch(exist_ok=True)
     if report is None:
         raise RuntimeError("Pipeline produced no report")
     report.update(metadata)
-    report["clean_data_version"] = f"{metadata['raw_data_version']}-{RULE_VERSION}"
+    digest = hashlib.sha256()
+    for table in ("users", "movies", "ratings"):
+        digest.update(table.encode())
+        digest.update(bytes.fromhex(file_sha256(output_dir / names[table])))
+    report["clean_data_version"] = digest.hexdigest()[:16]
     (output_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    publish_manifest(output_dir, report)
     return report
 
 
@@ -196,6 +205,7 @@ def run_hadoop(data_dir=DEFAULT_DATA, runs_dir=DEFAULT_RUNS, task_id=None,
         (output_dir / "before_report.json").write_text(json.dumps(before_report, ensure_ascii=False, indent=2), encoding="utf-8")
         (output_dir / "after_report.json").write_text(json.dumps(after_report, ensure_ascii=False, indent=2), encoding="utf-8")
         (output_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        publish_manifest(output_dir, report)
         output_dir.rename(runs_dir / task_id)
     if on_progress:
         on_progress("report", "三阶段报告已生成")
