@@ -6,17 +6,28 @@ Agent 目前采用规则路由，不调用大模型 API，也不生成模拟评�
 
 ## 运行
 
-需要 Python 3.9+。把课程提供的 `users.dat`、`movies.dat`、`ratings.dat` 放在仓库**同级**的 `ml-1m/`。程序会核对输入文件合成摘要 `04a56a90fa50af01`，不匹配则拒绝运行。仓库不包含数据或运行产物；仅下载官方原版无法复现课程提供的含异常输入。
+需要 Python 3.9+。把课程提供的 `users.dat`、`movies.dat`、`ratings.dat` 放在仓库**根目录下**的 `ml-1m/`。程序会核对输入文件合成摘要 `04a56a90fa50af01`，不匹配则拒绝运行。仓库不包含数据或运行产物；仅下载官方原版无法复现课程提供的含异常输入。
 
 ```bash
+./start.sh                           # 一键启动网页，默认 http://127.0.0.1:8765
+./start.sh --hadoop                  # 必须使用 Hadoop；未配置时明确退出
+./start.sh --local                   # 明确使用本地验证模式
+LAB2_PORT=9000 ./start.sh            # 自定义端口
 python3 -m unittest discover -p 'test_*.py' -v
+```
+
+`start.sh` 会优先检查已配置的 `HADOOP_STREAMING_JAR`、`hadoop`、`hdfs`，然后检查同级 `../.runtime/hadoop-3.4.2` 与 OpenJDK 17。两者都不可用时，默认以**本地验证模式**启动并在终端明确提示；它不会把本地结果标成 Hadoop 结果。即使课程数据尚未放好，网页仍可启动，但任务会返回缺失数据文件的原因。按 `Ctrl+C` 停止服务。若要现场证明 Hadoop 执行，请使用 `./start.sh --hadoop`，核对报告中的 `engine`、`hadoop_mode` 和 `phase_jobs`。
+
+单独运行或调试仍可使用：
+
+```bash
 python3 runner.py --engine local      # 仅验证本地算法逻辑
-python3 server.py                     # 默认本地模式，访问 http://127.0.0.1:8765
+python3 server.py                     # 默认本地模式
 ./hadoop_local.sh run                 # 实际调用 Hadoop Streaming
 ./hadoop_local.sh server              # 使用 Hadoop 的网页演示入口
 ```
 
-`hadoop_local.sh` 默认读取同级 `../.runtime/hadoop-3.4.2` 和 `/opt/homebrew/opt/openjdk@17`。换机器需配置 Hadoop、Java、`HADOOP_STREAMING_JAR` 等环境。若要证明一次演示由 Hadoop 执行，应使用 `./hadoop_local.sh server`，并在报告中核对 `engine`、`hadoop_mode` 和 `phase_jobs`。普通 `python3 server.py` **不会**调用 Hadoop。
+`hadoop_local.sh` 默认读取同级 `../.runtime/hadoop-3.4.2` 和 `/opt/homebrew/opt/openjdk@17`。换机器需配置 Hadoop、Java、`HADOOP_STREAMING_JAR` 等环境。普通 `python3 server.py` **不会**调用 Hadoop。
 
 ## 当前架构
 
@@ -32,6 +43,49 @@ index.html ──HTTP──> server.py (规则路由、任务状态、结果服�
 ```
 
 为保持现有演示命令和 Hadoop worker 导入路径稳定，第一轮核心文件仍在仓库根目录。新增模块承担跨迭代的任务、工具和产物边界；未来算法按工具接入，而非继续把业务逻辑写进 HTTP Handler。详细设计与接入约定见 [架构说明](docs/architecture.md)。
+
+## Hadoop 与非 Hadoop 的职责
+
+| 环节 | 负责方 | 本轮边界 |
+| --- | --- | --- |
+| 自然语言请求、工具选择、任务状态、失败提示、追问解释 | Agent / API | 组织任务并解释已保存的结果，不在 Agent 内计算或编造质量分数。 |
+| 原始数据解析与检查、异常隔离、去重和规范化 | Hadoop Streaming | 正式演示时由 Hadoop 作业执行，输出清洗数据和异常证据。 |
+| 清洗前与清洗后的五维指标计算 | Hadoop Streaming | 两次评分使用同一套 `pipeline.py` 规则，并由独立作业核对结果。 |
+| 版本校验、产物摘要、清单、任务持久化 | Python 服务层 | 管理输入与输出的可信边界，不替代 Hadoop 的数据清洗和评分。 |
+| 网页输入、进度、五维对比、报告与证据展示 | 前端 | 仅展示真实任务状态和报告；未完成时不显示占位分数。 |
+| 本地模式 | Python 验证入口 | 复用相同规则做开发与回归验证；不能作为“Hadoop 已执行”的证据。 |
+
+当前 Hadoop Streaming 的 mapper 将记录送往单个 reducer。它满足本轮实际调用 Hadoop 的要求，但不是可横向扩展的并行清洗架构；若后续数据规模增大，再按表和业务键拆分计算与聚合。
+
+## 当前目录
+
+```text
+movielens-analytics-agent/
+├── start.sh                     # 推荐的网页启动入口：自动选 Hadoop 或本地模式
+├── hadoop_local.sh              # 固定 Hadoop 3.4.2 单机环境的运行入口
+├── index.html                   # 对话、任务进度、评分及证据页面
+├── server.py                    # HTTP API、规则式 Agent、任务调度
+├── runner.py                    # 本地 / Hadoop 三阶段任务执行
+├── streaming.py                 # Hadoop Streaming mapper / reducer 入口
+├── pipeline.py                  # MovieLens 解析、清洗与五维评分规则
+├── registry.json               # 已登记的数据、规则与评分配置版本
+├── movielens_agent/
+│   ├── core/                    # 后续跨迭代契约的预留包；当前无业务实现
+│   ├── tools/registry.py        # 已实现工具的显式登记
+│   └── storage/
+│       ├── task_store.py        # SQLite 任务状态与阶段事件
+│       └── artifacts.py         # 产物清单与 SHA-256 校验
+├── docs/
+│   ├── architecture.md          # 架构与后续迭代接入约定
+│   └── ui-prototype.png          # 已批准的前端原型图
+├── test_pipeline.py             # 清洗规则、Streaming、API 错误测试
+├── test_architecture.py         # 任务持久化与产物校验测试
+├── 官方基准对照核查.md            # 与官方 MovieLens 1M 的历史对照
+├── ml-1m/                      # 课程输入，已忽略：users.dat / movies.dat / ratings.dat
+└── runs/                        # 运行时生成，不提交：任务 SQLite 与各任务产物
+```
+
+课程输入位于仓库内的 `ml-1m/`，但被 `.gitignore` 排除，不会提交到 Git。`runs/`、数据集和本机 Hadoop 运行环境均由 `.gitignore` 排除。第二、三轮工具尚未实现，目录不会用空工具冒充已完成能力。
 
 ## 任务与产物
 

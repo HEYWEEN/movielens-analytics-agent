@@ -187,6 +187,8 @@ def agent_chat(message, task_id=None, supplied_configuration=None):
     if request_run:
         try:
             configuration = requested_configuration(message, supplied_configuration or {})
+        except FileNotFoundError as exc:
+            return {"reply": f"任务未启动：缺少数据文件 {exc}。请按 README 配置课程数据。", "error": "missing_data"}
         except ValueError as exc:
             return {"reply": f"任务未启动：{exc}", "error": "unsupported_configuration"}
         task_id = uuid.uuid4().hex[:12]

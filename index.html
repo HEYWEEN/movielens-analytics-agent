@@ -1,93 +1,277 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MovieLens 数据治理 Agent</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23126955' d='M16 1 1 16l4 4L20 5l-4-4ZM23 7 7 23l4 4 16-16-4-4Zm6 6L13 29l4 2 14-14-2-4Z'/%3E%3C/svg%3E">
   <style>
-    :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #15232c; background: #f3f6f5; }
-    * { box-sizing: border-box; } body { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; }
-    h1 { font-size: 27px; margin: 0 0 8px; } h2 { font-size: 19px; margin: 0 0 14px; }
-    p { color: #52636d; line-height: 1.6; } .card { background: white; border: 1px solid #dbe5e2; border-radius: 14px; padding: 22px; margin-top: 18px; box-shadow: 0 4px 20px #1933270b; }
-    textarea { width: 100%; min-height: 82px; border: 1px solid #becdc8; border-radius: 10px; padding: 13px; font: inherit; resize: vertical; }
-    button { background: #126955; border: 0; border-radius: 8px; color: white; font: inherit; padding: 10px 18px; cursor: pointer; margin-top: 10px; }
-    button:disabled { opacity: .55; cursor: wait; } .muted { color: #687a83; } .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px; }
-    .metric { border: 1px solid #dbe5e2; border-radius: 10px; padding: 14px; } .metric strong { display:block; margin-bottom: 8px; }
-    .value { font-size: 21px; font-weight: 700; } .good { color: #126955; } .bad { color: #b04435; }
-    table { border-collapse: collapse; width: 100%; } th,td { border-bottom: 1px solid #e5ece9; padding: 10px; text-align: left; }
-    .scroll { overflow-x: auto; } .log { background: #f6f9f8; border-radius: 9px; padding: 12px; white-space: pre-wrap; line-height: 1.55; }
-    a { color: #126955; } details { margin-top: 12px; } li { margin: 7px 0; }
+    :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; color: #15232c; background: #f3f6f5; --green: #126955; --ink: #15232c; --muted: #52636d; --line: #dbe5e2; --soft: #f6f9f8; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-width: 320px; }
+    button, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid #8fc9b8; outline-offset: 3px; }
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .shell { max-width: 1580px; margin: 0 auto; padding: 24px clamp(18px, 3vw, 44px) 64px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+    .identity { display: flex; align-items: center; min-width: 0; gap: 14px; }
+    .brandmark { width: 34px; height: 34px; display: grid; place-items: center; color: var(--green); flex: none; }
+    .brandmark svg { width: 32px; height: 32px; }
+    h1 { font-size: clamp(20px, 1.65vw, 25px); line-height: 1.25; letter-spacing: -.025em; margin: 0; white-space: nowrap; }
+    .tagline { margin: 0 0 0 12px; font-size: 13px; color: #687a83; white-space: nowrap; }
+    .topmeta { display: flex; align-items: center; gap: 12px; flex: none; color: var(--muted); font-size: 12px; }
+    .engine-pill, .state-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 8px 11px; white-space: nowrap; }
+    .engine-pill:before, .state-pill:before { content: ""; width: 7px; height: 7px; background: #91a29d; border-radius: 50%; }
+    .engine-pill.active:before, .state-pill.running:before, .state-pill.complete:before { background: var(--green); }
+    .state-pill.failed:before { background: #b04435; }
+    .task-short { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr); align-items: start; gap: 18px; }
+    .panel { background: #fff; border: 1px solid var(--line); border-radius: 15px; box-shadow: 0 9px 30px #1933270a, 0 1px 2px #19332708; }
+    .conversation { padding: 20px; min-height: 0; display: flex; flex-direction: column; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; margin-bottom: 16px; }
+    h2 { margin: 0; font-size: 18px; line-height: 1.3; letter-spacing: -.015em; }
+    h3 { margin: 0; font-size: 15px; }
+    .quiet-button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 9px; min-height: 34px; padding: 6px 11px; font-size: 12px; font-weight: 600; }
+    .quiet-button:hover { border-color: #a7bdb5; background: var(--soft); }
+    .conversation-body { border: 1px solid #e6eeea; border-radius: 12px; background: linear-gradient(#fff, #fff 78%, #fbfdfc); min-height: 280px; padding: 22px; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+    .empty-conversation { margin: auto; max-width: 430px; text-align: center; }
+    .empty-icon { width: 48px; height: 48px; display: grid; place-items: center; margin: 0 auto 16px; color: var(--green); background: #eaf5f0; border-radius: 14px; font-size: 23px; }
+    .empty-conversation h3 { font-size: 17px; margin-bottom: 8px; }
+    .empty-conversation p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    #messages { display: flex; flex-direction: column; gap: 18px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .message { display: flex; gap: 12px; max-width: 92%; animation: arrive .28s ease-out both; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #e9f4ef; color: var(--green); display: grid; place-items: center; flex: none; font-weight: 750; font-size: 14px; }
+    .user .avatar { background: #e8eef0; color: #52636d; }
+    .bubble { padding: 12px 15px; border-radius: 12px; background: #f1f5f5; color: var(--ink); line-height: 1.62; font-size: 14px; overflow-wrap: anywhere; }
+    .user .bubble { background: #e9f5f0; border-top-right-radius: 4px; }
+    .assistant .bubble { border-top-left-radius: 4px; }
+    .message time { display: block; margin-top: 5px; font-size: 11px; color: #7b8b92; }
+    .timeline { margin: 0 0 0 44px; border: 1px solid #edf2ef; border-radius: 12px; background: #fafcfb; padding: 12px 16px; }
+    .step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; position: relative; min-height: 57px; }
+    .step:last-child { min-height: 34px; }
+    .step:not(:last-child):before { content: ""; position: absolute; left: 11px; top: 24px; bottom: -4px; border-left: 1px dashed #bdcec7; }
+    .step-dot { width: 23px; height: 23px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #c9d6d1; background: #fff; color: #fff; font-size: 12px; font-weight: 700; z-index: 1; }
+    .step.done .step-dot { background: var(--green); border-color: var(--green); }
+    .step.active .step-dot { border-color: var(--green); box-shadow: 0 0 0 4px #e8f4ee; }
+    .step-title { font-size: 13px; font-weight: 650; margin: 2px 0 3px; }
+    .step-detail { font-size: 12px; color: #687a83; line-height: 1.45; margin: 0 0 11px; }
+    .composer { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #19332708; }
+    textarea { width: 100%; min-height: 68px; resize: vertical; border: 1px solid transparent; background: transparent; padding: 7px 9px; outline: none; color: var(--ink); line-height: 1.55; font-size: 14px; }
+    textarea:focus { border-color: #a9cfc1; border-radius: 8px; background: #fcfefd; }
+    .composer-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 9px; padding-top: 10px; border-top: 1px solid #e9efec; }
+    .field { min-width: 0; }
+    .field span { display: block; font-size: 12px; font-weight: 650; color: var(--muted); margin: 0 0 5px 2px; }
+    select { appearance: none; width: 100%; min-height: 36px; border: 1px solid var(--line); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' stroke='%2352636d' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 11px center; border-radius: 8px; padding: 6px 28px 6px 10px; color: var(--ink); font-size: 12px; text-overflow: ellipsis; }
+    .send { min-height: 36px; min-width: 74px; padding: 7px 15px; border: 0; border-radius: 8px; color: #fff; background: var(--green); font-size: 13px; font-weight: 700; box-shadow: 0 3px 8px #12695522; }
+    .send:hover:not(:disabled) { background: #0e5948; transform: translateY(-1px); }
+    .sidebar { display: flex; flex-direction: column; gap: 18px; }
+    .sidebar .panel { padding: 20px; }
+    .overview dl { display: grid; grid-template-columns: 82px 1fr; gap: 15px 10px; margin: 18px 0 0; font-size: 13px; }
+    dt { color: var(--muted); } dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .progress-track { width: 100%; max-width: 230px; height: 8px; border-radius: 99px; background: #e6edeb; overflow: hidden; margin-top: 4px; }
+    .progress-fill { width: 0; height: 100%; background: var(--green); border-radius: inherit; transition: width .55s ease; }
+    .quality .panel-head, .evidence .panel-head { margin-bottom: 14px; }
+    .quality-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .metric { min-width: 0; min-height: 116px; padding: 13px 10px; border: 1px solid #e5ede9; border-radius: 10px; background: #fafcfb; }
+    .metric-name { color: var(--ink); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+    .metric-value { display: block; font-size: 19px; font-weight: 760; font-variant-numeric: tabular-nums; letter-spacing: -.03em; margin: 14px 0 5px; }
+    .metric-pending { display: block; color: #7a8a91; font-size: 12px; line-height: 1.5; margin-top: 19px; }
+    .metric-delta { color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .metric-delta.good { color: var(--green); } .metric-delta.bad { color: #b04435; }
+    .metric-evidence { display: block; color: #71828a; font-size: 11px; margin-top: 6px; line-height: 1.4; overflow-wrap: anywhere; }
+    .evidence p { margin: 0 0 14px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .evidence-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .evidence-links a, .evidence-links span { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 8px 10px; font-size: 12px; font-weight: 650; }
+    .evidence-links span { color: #9aa8ad; background: #f8faf9; }
+    .details { margin-top: 18px; padding: 24px; }
+    .details[hidden] { display: none; }
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .detail-block { min-width: 0; padding: 8px 0; }
+    .detail-block h3 { margin-bottom: 12px; }
+    .detail-block p, .detail-block li { font-size: 13px; line-height: 1.7; color: var(--muted); }
+    .detail-block ul { padding-left: 20px; margin: 10px 0; }
+    .detail-block strong { color: var(--ink); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e8efeb; white-space: nowrap; }
+    th { color: var(--muted); font-weight: 650; }
+    details { border-top: 1px solid #e9efec; padding-top: 13px; margin-top: 14px; }
+    summary { color: var(--green); cursor: pointer; font-size: 13px; font-weight: 650; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--soft); border-radius: 9px; padding: 12px; font-size: 11px; line-height: 1.6; }
+    .version-line { border-top: 1px solid #e9efec; margin: 20px 0 0; padding-top: 15px; color: #687a83; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+    .notice { margin-top: 12px; padding: 9px 11px; border-radius: 8px; background: #f8faf9; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .notice.error { background: #fff3f1; color: #9b3d32; }
+    [hidden] { display: none !important; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 1050px) { .workspace { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .85fr); } .tagline { display: none; } .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 760px) { .shell { padding: 17px 14px 40px; } .topbar { align-items: flex-start; margin-bottom: 17px; } .topmeta { flex-direction: column; align-items: flex-end; gap: 5px; } .task-short { display: none; } .workspace { display: flex; flex-direction: column; } .conversation { min-height: 0; padding: 15px; } .conversation-body { min-height: 330px; padding: 16px 12px; } .message { max-width: 100%; } .timeline { margin-left: 0; } .sidebar { display: contents; }  .composer-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); } .send { width: 100%; } .quality-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .details-grid { grid-template-columns: 1fr; gap: 12px; } }
+    @media (max-width: 520px) { h1 { font-size: 18px; white-space: normal; } .brandmark { width: 28px; } .topmeta { font-size: 11px; } .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .composer-footer { grid-template-columns: 1fr 1fr; } .field:last-of-type { grid-column: 1 / 2; } .send { grid-column: 2 / 3; } }
+    @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
 </head>
 <body>
-  <h1>MovieLens 数据治理 Agent</h1>
-  <p>输入清洗与评估请求，查看实际运行状态、数据处置和五维质量评分。当前执行引擎会显示在任务状态中。</p>
-  <section class="card">
-    <h2>发起任务或追问</h2>
-    <textarea id="prompt">请使用默认规则清洗 MovieLens 1M，评估清洗前后的五个质量维度，并说明异常处置。</textarea>
-    <div class="grid" style="margin-top:12px">
-      <label>数据版本<br><select id="dataVersion"></select></label>
-      <label>规则版本<br><select id="ruleVersion"></select></label>
-      <label>评分配置<br><select id="scoreConfig"></select></label>
+<div class="shell">
+  <header class="topbar">
+    <div class="identity">
+      <div class="brandmark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path fill="currentColor" d="M16 1 9 8l4 4 7-7-4-4ZM7 10 1 16l4 4 6-6-4-4Zm16-3L7 23l4 4L27 11l-4-4Zm6 6L13 29l4 2 14-14-2-4Z"/></svg></div>
+      <div><h1>MovieLens 数据治理 Agent</h1></div>
+      <p class="tagline">让数据更干净，让洞察更可靠</p>
     </div>
-    <div><button id="send">发送</button></div>
-    <p class="muted">完成后可追问“评分依据是什么”“隔离了哪些记录”“T1/T2 是什么”。目前每类版本只登记了一种可执行配置。</p>
-    <div class="log" id="reply">等待请求。</div>
+    <div class="topmeta"><span id="engineBadge" class="engine-pill">引擎未确认</span><span id="headerTask" class="task-short">尚无任务</span></div>
+  </header>
+
+  <main class="workspace">
+    <section class="panel conversation" aria-labelledby="conversationTitle">
+      <div class="panel-head"><h2 id="conversationTitle">对话与任务执行</h2><button id="newTask" class="quiet-button" type="button">新建任务</button></div>
+      <div id="conversationBody" class="conversation-body" role="log" aria-live="polite">
+        <div id="emptyConversation" class="empty-conversation"><div class="empty-icon" aria-hidden="true">✦</div><h3>从一句请求开始</h3><p>描述需要清洗和评估的数据。Agent 会调用实际工具，并把任务进度、评分和依据带回来。</p></div>
+        <div id="messages"></div>
+        <div id="timeline" class="timeline" hidden></div>
+      </div>
+      <div class="composer">
+        <label for="prompt" class="sr-only">输入请求或追问</label>
+        <textarea id="prompt" aria-label="输入请求或追问">请使用默认规则清洗 MovieLens 1M，评估清洗前后的五个质量维度，并说明异常处置。</textarea>
+        <div class="composer-footer">
+          <label class="field"><span>数据版本</span><select id="dataVersion" aria-label="数据版本"></select></label>
+          <label class="field"><span>规则版本</span><select id="ruleVersion" aria-label="规则版本"></select></label>
+          <label class="field"><span>评分配置</span><select id="scoreConfig" aria-label="评分配置"></select></label>
+          <button id="send" class="send" type="button">发送</button>
+        </div>
+      </div>
+      <div id="notice" class="notice" hidden></div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="panel overview" aria-labelledby="overviewTitle">
+        <div class="panel-head"><h2 id="overviewTitle">任务概览</h2><span id="statusPill" class="state-pill">未开始</span></div>
+        <dl><dt>任务 ID</dt><dd id="taskId">—</dd><dt>执行引擎</dt><dd id="taskEngine">—</dd><dt>当前阶段</dt><dd id="currentStage">等待请求</dd><dt>整体进度</dt><dd><div class="progress-track" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill" class="progress-fill"></div></div><span id="progressLabel">0 / 4</span></dd></dl>
+      </section>
+      <section class="panel quality" aria-labelledby="qualityTitle">
+        <div class="panel-head"><h2 id="qualityTitle">质量评估</h2><span id="qualityState" class="state-pill">等待结果</span></div>
+        <div id="scores" class="quality-grid"></div>
+      </section>
+      <section class="panel evidence" aria-labelledby="evidenceTitle">
+        <div class="panel-head"><h2 id="evidenceTitle">结果与证据</h2><span id="evidenceState" class="state-pill">未生成</span></div>
+        <p id="evidenceHint">任务完成后可查看评估报告、产物校验清单和异常记录。</p>
+        <div id="evidenceLinks" class="evidence-links"><span>评估报告</span><span>产物清单</span><span>异常记录</span></div>
+      </section>
+    </aside>
+  </main>
+
+  <section id="results" class="panel details" hidden aria-labelledby="resultsTitle">
+    <div class="panel-head"><h2 id="resultsTitle">清洗结果与评估依据</h2></div>
+    <div class="details-grid">
+      <div class="detail-block"><h3>数据量变化</h3><div id="counts" class="table-wrap"></div><h3 style="margin-top:22px">异常处置</h3><div id="issues"></div></div>
+      <div class="detail-block"><h3>结果解释</h3><div id="explanations"></div><details><summary>评分公式与局限</summary><div id="methods"></div><div id="limitations"></div></details><details><summary>清洗数据样例</summary><pre id="samples">正在读取…</pre></details></div>
+    </div>
+    <p id="versions" class="version-line"></p>
   </section>
-  <section class="card">
-    <h2>执行状态</h2>
-    <div id="status" class="muted">尚无任务。</div>
-    <div id="stageHistory" class="muted"></div>
-  </section>
-  <section class="card" id="results" hidden>
-    <h2>五维评分</h2><div id="scores" class="grid"></div>
-    <h2 style="margin-top:26px">结果解释</h2><div id="explanations"></div>
-    <h2 style="margin-top:26px">数据量</h2><div id="counts" class="scroll"></div>
-    <h2 style="margin-top:26px">异常处置</h2><div id="issues"></div>
-    <details><summary>评分公式、适用范围与局限</summary><div id="methods"></div><div id="limitations"></div></details>
-    <p id="versions" class="muted"></p>
-    <details><summary>清洗数据样例（每表前 10 条）</summary><div id="samples" class="log">正在读取…</div></details>
-    <a id="reportLink" target="_blank">查看完整 JSON 报告</a> · <a id="manifestLink" target="_blank">查看产物校验清单</a> · <a id="uncertainLink" target="_blank">查看未核验冲突明细</a>
-  </section>
+</div>
 <script>
-  let taskId = null, timer = null;
+  let taskId = null, timer = null, lastStatus = null;
   const $ = id => document.getElementById(id);
+  const names = ['Accurate', 'Complete', 'Unique', 'Up-to-date', 'Consistent'];
+  const stages = [
+    {id:'prepare', title:'数据检查', detail:'校验数据版本与原始输入'},
+    {id:'before', title:'清洗前评分', detail:'计算原始数据的质量基线'},
+    {id:'clean', title:'Hadoop 清洗', detail:'校验、规范化、去重与隔离'},
+    {id:'after', title:'清洗后评分', detail:'按相同口径重新评估'}
+  ];
   const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const now = () => new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
   async function getJson(url, options) { const r = await fetch(url, options); const data = await r.json(); if (!r.ok) throw Error(data.error || r.statusText); return data; }
+  function notice(message, error=false) { $('notice').textContent = message; $('notice').className = 'notice' + (error ? ' error' : ''); $('notice').hidden = !message; }
+  function addMessage(role, content) {
+    $('emptyConversation').hidden = true;
+    const box = document.createElement('div'); box.className = 'message ' + role;
+    box.innerHTML = `<div class="avatar" aria-hidden="true">${role === 'user' ? '你' : '◆'}</div><div><div class="bubble">${esc(content)}</div><time>${now()}</time></div>`;
+    $('messages').append(box); box.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
+  function resetView() {
+    taskId = null; lastStatus = null; if (timer) clearInterval(timer); timer = null;
+    localStorage.removeItem('lab2TaskId'); $('messages').replaceChildren(); $('emptyConversation').hidden = false;
+    $('timeline').hidden = true; $('results').hidden = true; $('taskId').textContent = '—'; $('headerTask').textContent = '尚无任务';
+    $('taskEngine').textContent = '—'; $('currentStage').textContent = '等待请求'; $('statusPill').textContent = '未开始'; $('statusPill').className = 'state-pill';
+    $('engineBadge').textContent = '引擎未确认'; $('engineBadge').className = 'engine-pill';
+    $('progressFill').style.width = '0%'; $('progressLabel').textContent = '0 / 4'; document.querySelector('.progress-track').setAttribute('aria-valuenow','0');
+    $('qualityState').textContent = '等待结果'; $('qualityState').className = 'state-pill'; $('evidenceState').textContent = '未生成'; $('evidenceState').className = 'state-pill';
+    $('evidenceLinks').innerHTML = '<span>评估报告</span><span>产物清单</span><span>异常记录</span>'; $('evidenceHint').textContent = '任务完成后可查看评估报告、产物校验清单和异常记录。';
+    renderPendingScores(); notice('');
+  }
+  function renderPendingScores() { $('scores').innerHTML = names.map(name => `<div class="metric"><span class="metric-name">${name}</span><span class="metric-pending">结果将在任务<br>完成后显示</span></div>`).join(''); }
+  function stepIndex(stage, status) {
+    if (status === 'complete') return 4;
+    if (stage === 'local_pipeline') return 1;
+    if (stage === 'report') return 3;
+    const found = stages.findIndex(item => item.id === stage);
+    return found < 0 ? 0 : found;
+  }
+  function renderTimeline(state) {
+    const current = stepIndex(state.stage, state.status);
+    $('timeline').hidden = false;
+    $('timeline').innerHTML = stages.map((step,i) => {
+      const done = state.status === 'complete' || i < current;
+      const active = state.status === 'running' && i === current;
+      const detail = active ? esc(state.progress || step.detail) : done ? '已完成' : state.status === 'failed' && i === current ? '执行中断' : step.detail;
+      const title = step.id === 'clean' && state.engine === 'local' ? '本地清洗' : step.title;
+      return `<div class="step ${done ? 'done' : active ? 'active' : ''}"><span class="step-dot">${done ? '✓' : ''}</span><div><div class="step-title">${title}</div><p class="step-detail">${detail}</p></div></div>`;
+    }).join('');
+  }
+  function renderStatus(state) {
+    const status = state.status || 'queued'; const index = stepIndex(state.stage, status);
+    $('taskId').textContent = state.task_id || taskId; $('headerTask').textContent = '任务 ID · ' + (state.task_id || taskId);
+    $('taskEngine').textContent = state.engine || '—'; $('engineBadge').textContent = state.engine || '引擎未确认'; $('engineBadge').className = 'engine-pill' + (state.engine ? ' active' : '');
+    $('statusPill').textContent = ({queued:'等待中',running:'执行中',complete:'已完成',failed:'失败'})[status] || status;
+    $('statusPill').className = 'state-pill ' + status;
+    $('currentStage').textContent = status === 'failed' ? (state.failed_stage || state.stage || '未知') + ' · ' + (state.error || '执行失败') : status === 'complete' ? '任务完成' : state.progress || '等待运行';
+    $('progressFill').style.width = (index / 4 * 100) + '%'; $('progressLabel').textContent = index + ' / 4';
+    document.querySelector('.progress-track').setAttribute('aria-valuenow', String(index * 25));
+    renderTimeline(state);
+    if (status === 'failed' && lastStatus !== 'failed') { addMessage('assistant', '任务执行失败：' + (state.error || '请查看任务状态。')); notice('失败阶段：' + (state.failed_stage || state.stage || '未知'), true); }
+    lastStatus = status;
+  }
   async function send() {
-    $('send').disabled = true;
+    const message = $('prompt').value.trim(); if (!message) { notice('请输入清洗、评估或追问内容。', true); $('prompt').focus(); return; }
+    $('send').disabled = true; $('newTask').disabled = true; notice('');
     try {
-      const data = await getJson('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:$('prompt').value,task_id:taskId,data_version:$('dataVersion').value,rule_version:$('ruleVersion').value,score_config_version:$('scoreConfig').value})});
-      $('reply').textContent = data.reply;
-      if (data.task_id) { taskId = data.task_id; await poll(); if (!timer) timer = setInterval(poll, 2500); }
-    } catch (e) { $('reply').textContent = '请求失败：' + e.message; }
-    finally { $('send').disabled = false; }
+      const data = await getJson('/api/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,task_id:taskId,data_version:$('dataVersion').value,rule_version:$('ruleVersion').value,score_config_version:$('scoreConfig').value})});
+      addMessage('user', message); addMessage('assistant', data.reply || '请求已收到。');
+      if (data.task_id) { const changed = taskId !== data.task_id; taskId = data.task_id; localStorage.lab2TaskId = taskId; if (changed) { $('results').hidden = true; renderPendingScores(); } await poll(); if (lastStatus === 'running' || lastStatus === 'queued') { if (!timer) timer = setInterval(poll, 2500); } }
+    } catch(e) { notice('请求失败：' + e.message, true); }
+    finally { $('send').disabled = false; $('newTask').disabled = false; }
   }
   async function poll() {
     if (!taskId) return;
+    const requestedTask = taskId;
     try {
-      const state = await getJson('/api/tasks/' + encodeURIComponent(taskId));
-      $('status').textContent = `任务 ${taskId} · ${state.status} · 阶段 ${state.stage || '—'} · ${state.progress} · 引擎 ${state.engine}` + (state.error ? ` · ${state.error}` : '');
-      $('stageHistory').innerHTML = (state.events || []).map(event => `<p>${esc(event.message)}</p>`).join('');
-      if (state.status === 'complete') { clearInterval(timer); timer = null; render(await getJson('/api/tasks/' + encodeURIComponent(taskId) + '/report')); }
-      if (state.status === 'failed') { clearInterval(timer); timer = null; }
-    } catch (e) { $('status').textContent = '状态读取失败：' + e.message; clearInterval(timer); timer = null; }
+      const state = await getJson('/api/tasks/' + encodeURIComponent(requestedTask));
+      if (taskId !== requestedTask) return;
+      renderStatus(state);
+      if ((state.status === 'queued' || state.status === 'running') && !timer) timer = setInterval(poll, 2500);
+      if (state.status === 'complete') { if (timer) clearInterval(timer); timer = null; const report = await getJson('/api/tasks/' + encodeURIComponent(requestedTask) + '/report'); if (taskId === requestedTask) renderReport(report); }
+      if (state.status === 'failed') { if (timer) clearInterval(timer); timer = null; }
+    } catch(e) { if (taskId !== requestedTask) return; notice('状态读取失败：' + e.message, true); if (timer) clearInterval(timer); timer = null; }
   }
-  function render(report) {
-    $('results').hidden = false;
+  function renderReport(report) {
+    $('results').hidden = false; $('qualityState').textContent = '已生成'; $('qualityState').className = 'state-pill complete';
     $('scores').innerHTML = Object.entries(report.raw.scores).map(([name,before]) => {
       const after = report.clean.scores[name], delta = before == null || after == null ? null : after-before;
       const rawEvidence = report.score_evidence?.raw?.[name], cleanEvidence = report.score_evidence?.clean?.[name];
-      const evidence = rawEvidence && cleanEvidence ? `<p class="muted">分子/分母：${rawEvidence.numerator}/${rawEvidence.denominator} → ${cleanEvidence.numerator}/${cleanEvidence.denominator}</p>` : '';
-      return `<div class="metric"><strong>${esc(name)}</strong><span class="value">${before ?? '无法评价'} → ${after ?? '无法评价'}</span><p class="${delta > 0 ? 'good' : delta < 0 ? 'bad' : ''}">变化：${delta == null ? '—' : delta.toFixed(3)}</p>${evidence}</div>`;
+      const evidence = rawEvidence && cleanEvidence ? `<span class="metric-evidence">分子/分母 ${rawEvidence.numerator}/${rawEvidence.denominator} → ${cleanEvidence.numerator}/${cleanEvidence.denominator}</span>` : '';
+      return `<div class="metric"><span class="metric-name">${esc(name)}</span><strong class="metric-value">${before ?? '—'} → ${after ?? '—'}</strong><span class="metric-delta ${delta > 0 ? 'good' : delta < 0 ? 'bad' : ''}">变化 ${delta == null ? '无法评价' : (delta > 0 ? '+' : '') + delta.toFixed(3)}</span>${evidence}</div>`;
     }).join('');
-    const interpretation = report.interpretation || {};
-    const audit = report.reference_audit;
+    const interpretation = report.interpretation || {}; const audit = report.reference_audit;
     $('explanations').innerHTML = '<ul>' + Object.entries(report.raw.scores).map(([name]) => `<li><strong>${esc(name)}</strong>：${esc(interpretation[name] || '详见评估报告。')}</li>`).join('') + '</ul>' +
       '<p><strong>仍未解决：</strong>' + esc((interpretation.unresolved || report.limitations).join('；')) + '</p>' +
       (audit ? `<p><strong>官方基准历史对照：</strong>评分缺失 ${audit.ratings_missing}、额外 ${audit.ratings_extra}；用户内容不同 ${audit.users_content_mismatched}、电影内容不同 ${audit.movies_content_mismatched}。这项对照未在本次任务中重算；详见项目文档“${esc(audit.details)}”。</p>` : '');
-    $('counts').innerHTML = '<table><tr><th>数据表</th><th>清洗前</th><th>清洗后</th><th>减少</th></tr>' +
-      ['users','movies','ratings'].map(t => `<tr><td>${esc(t)}</td><td>${report.raw.counts[t].rows}</td><td>${report.clean.counts[t].rows}</td><td>${report.raw.counts[t].rows-report.clean.counts[t].rows}</td></tr>`).join('') + '</table>';
-    $('issues').innerHTML = '<div class="scroll"><table><tr><th>原因</th><th>数量</th></tr>' + Object.entries(report.issues).map(([name,n]) => `<tr><td>${esc(name)}</td><td>${n}</td></tr>`).join('') + '</table></div>' +
+    $('counts').innerHTML = '<table><tr><th>数据表</th><th>清洗前</th><th>清洗后</th><th>减少</th></tr>' + ['users','movies','ratings'].map(t => `<tr><td>${esc(t)}</td><td>${report.raw.counts[t].rows}</td><td>${report.clean.counts[t].rows}</td><td>${report.raw.counts[t].rows-report.clean.counts[t].rows}</td></tr>`).join('') + '</table>';
+    $('issues').innerHTML = '<div class="table-wrap"><table><tr><th>原因</th><th>数量</th></tr>' + Object.entries(report.issues).map(([name,n]) => `<tr><td>${esc(name)}</td><td>${n}</td></tr>`).join('') + '</table></div>' +
       `<p>规范化后最终保留 ${report.disposition?.repaired_retained ?? '—'} 条；去重 ${report.disposition?.exact_duplicates ?? '—'} 条；冲突隔离 ${report.disposition?.conflicting_rows ?? '—'} 条；其他无效或孤立记录隔离 ${report.disposition?.invalid_or_orphan_rows ?? '—'} 条。</p>` +
       `<p><strong>同频冲突保留但未核验：${report.disposition?.retained_unverified_ties ?? '—'} 条</strong>（用户 ${report.unresolved_ties?.by_table?.users ?? '—'}、电影 ${report.unresolved_ties?.by_table?.movies ?? '—'}、评分 ${report.unresolved_ties?.by_table?.ratings ?? '—'}）。这些属于保留行，不是“已修复”或额外删除的行；Accurate 已据此扣分。</p>` +
       `<p>去重前规范化的输入行：用户 ${report.normalized_records.users}、电影 ${report.normalized_records.movies}、评分 ${report.normalized_records.ratings} 条。这不是最终保留的修复行数。</p>` +
@@ -95,22 +279,17 @@
     $('methods').innerHTML = Object.entries(report.quality_method || {}).map(([name,item]) => `<p><strong>${esc(name)}</strong>：${esc(item.formula)}<br>范围：${esc(item.scope)}；局限：${esc(item.limitation)}</p>`).join('');
     $('limitations').innerHTML = '<ul>' + report.limitations.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
     $('versions').textContent = `原始数据版本 ${report.raw_data_version} · 清洗数据版本 ${report.clean_data_version} · 规则 ${report.rule_version} · 评分配置 ${report.score_config_version || '未记录'} · T1 ${report.time_boundaries.T1_utc} · T2 ${report.time_boundaries.T2_utc} · 引擎 ${report.engine}${report.hadoop_mode ? ' (' + report.hadoop_mode + ')' : ''}`;
-    $('reportLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/report';
-    $('manifestLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/manifest';
-    $('uncertainLink').href = '/api/tasks/' + encodeURIComponent(taskId) + '/unresolved';
-    $('uncertainLink').hidden = !report.unresolved_ties;
-    Promise.all(['users','movies','ratings'].map(t => getJson('/api/tasks/' + encodeURIComponent(taskId) + '/sample?table=' + t)))
-      .then(items => $('samples').textContent = items.map(x => x.table + '\n' + x.sample.join('\n')).join('\n\n'))
-      .catch(e => $('samples').textContent = '样例读取失败：' + e.message);
+    const base = '/api/tasks/' + encodeURIComponent(taskId);
+    $('evidenceState').textContent = '已生成'; $('evidenceState').className = 'state-pill complete'; $('evidenceHint').textContent = '以下文件来自本次任务的实际运行结果。';
+    $('evidenceLinks').innerHTML = `<a href="${base}/report" target="_blank" rel="noopener">评估报告 ↗</a><a href="${base}/manifest" target="_blank" rel="noopener">产物清单 ↗</a>` + (report.unresolved_ties?.total_retained ? `<a href="${base}/unresolved" target="_blank" rel="noopener">未核验冲突 ↗</a>` : '<span>无未核验冲突</span>');
+    Promise.all(['users','movies','ratings'].map(t => getJson(base + '/sample?table=' + t))).then(items => $('samples').textContent = items.map(x => x.table + '\n' + x.sample.join('\n')).join('\n\n')).catch(e => $('samples').textContent = '样例读取失败：' + e.message);
   }
   $('send').addEventListener('click', send);
-  getJson('/api/config').then(config => {
-    for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) {
-      $(id).innerHTML = config[key].map(value => `<option value="${esc(value)}" ${value === config.defaults[selected] ? 'selected' : ''}>${esc(value)}</option>`).join('');
-    }
-  }).catch(e => $('reply').textContent = '配置读取失败：' + e.message);
+  $('newTask').addEventListener('click', () => { resetView(); $('prompt').focus(); });
+  $('prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } });
+  renderPendingScores();
+  getJson('/api/config').then(config => { for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) { $(id).innerHTML = config[key].map(value => `<option value="${esc(value)}" ${value === config.defaults[selected] ? 'selected' : ''}>${esc(value)}</option>`).join(''); } }).catch(e => notice('配置读取失败：' + e.message + '。请通过服务地址打开页面。', true));
   if (localStorage.lab2TaskId) { taskId = localStorage.lab2TaskId; poll(); }
-  setInterval(() => { if (taskId) localStorage.lab2TaskId = taskId; }, 1000);
 </script>
 </body>
 </html>

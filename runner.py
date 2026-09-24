@@ -15,7 +15,7 @@ from pipeline import RULE_VERSION, SCORE_CONFIG_VERSION, process, version_for_fi
 from movielens_agent.storage.artifacts import file_sha256, publish_manifest
 
 BASE = Path(__file__).resolve().parent
-DEFAULT_DATA = BASE.parent / "ml-1m"
+DEFAULT_DATA = BASE / "ml-1m"
 DEFAULT_RUNS = BASE / "runs"
 REGISTRY = json.loads((BASE / "registry.json").read_text(encoding="utf-8"))
 

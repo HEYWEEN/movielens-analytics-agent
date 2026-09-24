@@ -94,6 +94,12 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(len(before.stdout.decode().splitlines()), 1)
         self.assertTrue(before.stdout.startswith(b"report\t"))
 
+    def test_missing_data_returns_clear_error(self):
+        with patch("server.resolve_configuration", side_effect=FileNotFoundError("users.dat")):
+            response = agent_chat("请清洗 MovieLens 1M")
+        self.assertEqual(response["error"], "missing_data")
+        self.assertIn("users.dat", response["reply"])
+
     def test_registered_configuration_is_checked(self):
         with tempfile.TemporaryDirectory() as directory:
             data_dir = Path(directory)

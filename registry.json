@@ -6,7 +6,7 @@
   },
   "data_versions": {
     "04a56a90fa50af01": {
-      "path": "../ml-1m",
+      "path": "ml-1m",
       "description": "Project-provided MovieLens 1M input; SHA-256 prefix verified before every run",
       "reference_audit": {
         "rule_version": "ml1m-rules-v4",
