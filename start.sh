@@ -5,7 +5,6 @@ project_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 runtime_dir="$project_dir/../.runtime"
 hadoop_dir="$runtime_dir/hadoop-3.4.2"
 bundled_jar="$hadoop_dir/share/hadoop/tools/lib/hadoop-streaming-3.4.2.jar"
-bundled_java="/opt/homebrew/opt/openjdk@17/bin/java"
 mode=${1:-auto}
 
 case "$mode" in
@@ -51,7 +50,7 @@ if [ -n "${HADOOP_STREAMING_JAR:-}" ] && [ -f "$HADOOP_STREAMING_JAR" ] &&
   exec python3 "$project_dir/server.py"
 fi
 
-if [ -f "$bundled_jar" ] && [ -x "$bundled_java" ]; then
+if [ -f "$bundled_jar" ] && command -v java >/dev/null 2>&1; then
   printf 'Starting bundled Hadoop standalone mode at http://127.0.0.1:%s\n' "$port"
   exec "$project_dir/hadoop_local.sh" server
 fi

@@ -56,6 +56,18 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(report["disposition"]["repaired_retained"], 0)
         self.assertEqual(report["disposition"]["exact_duplicates"], 1)
 
+    def test_clean_rating_order_does_not_depend_on_input_order(self):
+        entities = [("users", "1::M::25::12::00501"),
+                    ("movies", "1::Film (2000)::Drama"),
+                    ("movies", "2::Another (2000)::Drama")]
+        ratings = [("ratings", "1::2::5::978307201"),
+                   ("ratings", "1::1::4::978307200")]
+        def cleaned(rows):
+            output = []
+            process(rows, lambda kind, payload: output.append((kind, payload)))
+            return [payload for kind, payload in output if kind == "ratings"]
+        self.assertEqual(cleaned(entities + ratings), cleaned(list(reversed(ratings)) + entities))
+
     def test_equal_frequency_conflict_remains_unverified_after_rescoring(self):
         records = [("users", "1::M::25::12::00501"),
                    ("users", "1::F::56::12::00501"),

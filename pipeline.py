@@ -238,7 +238,10 @@ def process(records, emit):
             normalized_candidates["ratings"].discard(line.rstrip("\r\n"))
 
         timestamps = []
-        for key, variants in events.items():
+        # Hadoop may feed files and partitions in a different order from local mode.
+        # Canonical ordering keeps clean-file hashes and downstream data versions stable.
+        for key in sorted(events, key=lambda value: tuple(int(part) for part in value)):
+            variants = events[key]
             canonical_rating = sorted(variants, key=lambda rating: (-variants[rating], int(rating)))[0]
             business_key = "::".join(key)
             top_count = variants[canonical_rating]

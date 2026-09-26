@@ -14,9 +14,10 @@ Agent 目前采用规则路由，不调用大模型 API，也不生成模拟评�
 ./start.sh --local                   # 明确使用本地验证模式
 LAB2_PORT=9000 ./start.sh            # 自定义端口
 python3 -m unittest discover -p 'test_*.py' -v
+python3 verify_iteration1.py runs/<task_id>  # 核验正式 Hadoop 产物
 ```
 
-`start.sh` 会优先检查已配置的 `HADOOP_STREAMING_JAR`、`hadoop`、`hdfs`，然后检查同级 `../.runtime/hadoop-3.4.2` 与 OpenJDK 17。两者都不可用时，默认以**本地验证模式**启动并在终端明确提示；它不会把本地结果标成 Hadoop 结果。即使课程数据尚未放好，网页仍可启动，但任务会返回缺失数据文件的原因。按 `Ctrl+C` 停止服务。若要现场证明 Hadoop 执行，请使用 `./start.sh --hadoop`，核对报告中的 `engine`、`hadoop_mode` 和 `phase_jobs`。
+`start.sh` 会优先检查已配置的 `HADOOP_STREAMING_JAR`、`hadoop`、`hdfs`，然后检查同级 `../.runtime/hadoop-3.4.2` 与可用的 Java 运行时。两者都不可用时，默认以**本地验证模式**启动并在终端明确提示；它不会把本地结果标成 Hadoop 结果。即使课程数据尚未放好，网页仍可启动，但任务会返回缺失数据文件的原因。按 `Ctrl+C` 停止服务。若要现场证明 Hadoop 执行，请使用 `./start.sh --hadoop`，核对报告中的 `engine`、`hadoop_mode` 和 `phase_jobs`。
 
 单独运行或调试仍可使用：
 
@@ -27,7 +28,7 @@ python3 server.py                     # 默认本地模式
 ./hadoop_local.sh server              # 使用 Hadoop 的网页演示入口
 ```
 
-`hadoop_local.sh` 默认读取同级 `../.runtime/hadoop-3.4.2` 和 `/opt/homebrew/opt/openjdk@17`。换机器需配置 Hadoop、Java、`HADOOP_STREAMING_JAR` 等环境。普通 `python3 server.py` **不会**调用 Hadoop。
+`hadoop_local.sh` 默认读取同级 `../.runtime/hadoop-3.4.2`，通过 `JAVA_HOME` 或 macOS 的 `/usr/libexec/java_home` 定位 Java。换机器需配置 Hadoop、Java、`HADOOP_STREAMING_JAR` 等环境。普通 `python3 server.py` **不会**调用 Hadoop。
 
 ## 当前架构
 
@@ -42,7 +43,7 @@ index.html ──HTTP──> server.py (规则路由、任务状态、结果服�
                                   └── movielens_agent/storage/artifacts.py (产物校验)
 ```
 
-为保持现有演示命令和 Hadoop worker 导入路径稳定，第一轮核心文件仍在仓库根目录。新增模块承担跨迭代的任务、工具和产物边界；未来算法按工具接入，而非继续把业务逻辑写进 HTTP Handler。详细设计与接入约定见 [架构说明](docs/architecture.md)。
+为保持现有演示命令和 Hadoop worker 导入路径稳定，第一轮核心文件仍在仓库根目录。新增模块承担跨迭代的任务、工具和产物边界；未来算法按工具接入，而非继续把业务逻辑写进 HTTP Handler。详细设计与接入约定见 [架构说明](docs/architecture.md)，三轮任务顺序与验收点见 [项目路线](docs/project-roadmap.md)。
 
 ## Hadoop 与非 Hadoop 的职责
 
@@ -68,6 +69,7 @@ movielens-analytics-agent/
 ├── runner.py                    # 本地 / Hadoop 三阶段任务执行
 ├── streaming.py                 # Hadoop Streaming mapper / reducer 入口
 ├── pipeline.py                  # MovieLens 解析、清洗与五维评分规则
+├── verify_iteration1.py         # 正式运行产物、版本与三阶段证据验收
 ├── registry.json               # 已登记的数据、规则与评分配置版本
 ├── movielens_agent/
 │   ├── core/                    # 后续跨迭代契约的预留包；当前无业务实现
@@ -77,6 +79,8 @@ movielens-analytics-agent/
 │       └── artifacts.py         # 产物清单与 SHA-256 校验
 ├── docs/
 │   ├── architecture.md          # 架构与后续迭代接入约定
+│   ├── iteration1-experiment.md # 本轮真实 Hadoop 实验结果与局限
+│   ├── project-roadmap.md        # 三轮任务顺序与验收点
 │   └── ui-prototype.png          # 已批准的前端原型图
 ├── test_pipeline.py             # 清洗规则、Streaming、API 错误测试
 ├── test_architecture.py         # 任务持久化与产物校验测试
@@ -85,7 +89,7 @@ movielens-analytics-agent/
 └── runs/                        # 运行时生成，不提交：任务 SQLite 与各任务产物
 ```
 
-课程输入位于仓库内的 `ml-1m/`，但被 `.gitignore` 排除，不会提交到 Git。`runs/`、数据集和本机 Hadoop 运行环境均由 `.gitignore` 排除。第二、三轮工具尚未实现，目录不会用空工具冒充已完成能力。
+课程输入位于仓库内的 `ml-1m/`，但被 `.gitignore` 排除，不会提交到 Git。`runs/` 和数据集由 `.gitignore` 排除；同级 `../.runtime/` 位于仓库之外。第二、三轮工具尚未实现，目录不会用空工具冒充已完成能力。
 
 ## 任务与产物
 
@@ -101,6 +105,6 @@ movielens-analytics-agent/
 
 五维评分清洗前后使用相同口径。Accurate 从合规记录数中扣除无效引用和同频冲突未核验行；Complete 衡量必需字段非空；Unique 衡量重复业务键；Up-to-date 以 2003-02-28 日终前 365 天为固定历史参照；Consistent 衡量结构、冲突和引用一致性。它们是代理指标，不能证明人口属性、电影信息或评分内容真实。
 
-先前使用课程输入完成的 Hadoop 任务记录显示，原始用户、电影、评分行数分别为 6,946、4,465、1,150,241；清洗后为 6,040、3,883、1,000,209。五维分数从 `91.211 / 99.232 / 95.690 / 2.066 / 97.503` 变为 `99.968 / 100 / 100 / 2.168 / 100`。`T1=2000-12-02T14:52:18Z`，`T2=2000-12-29T23:43:34Z`。这些是旧版运行记录；更新架构后的全量 Hadoop 运行需要在具备课程数据的机器上重新执行和核验。
+2026-09-26 已使用更新后的架构、课程输入和一键启动入口完成三阶段全量 Hadoop Streaming 实验。任务 ID 为 `e95ea259cb07`，清洗数据版本为 `8891cc6d797569c0`；原始用户、电影、评分行数分别为 6,946、4,465、1,150,241，清洗后为 6,040、3,883、1,000,209。五维分数从 `91.211 / 99.232 / 95.690 / 2.066 / 97.503` 变为 `99.968 / 100 / 100 / 2.168 / 100`。`T1=2000-12-02T14:52:18Z`，`T2=2000-12-29T23:43:34Z`。本机的 `runs/e95ea259cb07/` 已通过 `verify_iteration1.py` 核验；本地验证模式与 Hadoop 模式的三个清洗文件 SHA-256 完全一致。实验配置、处置统计和评价局限见 [迭代一实验记录](docs/iteration1-experiment.md)。
 
 与官方基准相比，评分记录一致，用户 126 条、电影 48 条内容不同；这些 ID 均在 322 条未核验集合内，见 [基准对照说明](官方基准对照核查.md)。未按官方答案回填。当前系统也未提供通用自然语言理解、任意规则编辑、多节点 Hadoop 扩展、第二轮算法或第三轮图谱能力。

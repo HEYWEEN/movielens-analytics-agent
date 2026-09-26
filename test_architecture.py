@@ -58,6 +58,24 @@ class ArchitectureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "users_clean.dat"):
                 verify_manifest(output)
 
+    def test_hadoop_manifest_covers_independent_phase_reports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            for table in ("users", "movies", "ratings"):
+                (output / f"{table}_clean.dat").write_text(table, encoding="utf-8")
+            report = {"task_id": "d" * 12, "raw_data_version": "raw", "clean_data_version": "clean",
+                      "rule_version": "rules", "score_config_version": "scores", "time_boundaries": {"T1": 1, "T2": 2},
+                      "engine": "hadoop-streaming", "phase_jobs": {"before": {}, "clean": {}, "after": {}}}
+            (output / "report.json").write_text(json.dumps(report), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "before_report.json"):
+                publish_manifest(output, report)
+            for name in ("before_report.json", "after_report.json"):
+                (output / name).write_text("{}", encoding="utf-8")
+            publish_manifest(output, report)
+            (output / "after_report.json").write_text("changed", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "after_report.json"):
+                verify_manifest(output)
+
 
 if __name__ == "__main__":
     unittest.main()

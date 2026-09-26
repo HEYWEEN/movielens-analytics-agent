@@ -17,13 +17,16 @@ def file_sha256(path):
 def publish_manifest(output_dir, report):
     output_dir = Path(output_dir)
     names = ("users_clean.dat", "movies_clean.dat", "ratings_clean.dat", "quarantine.jsonl",
-             "unresolved_conflicts.jsonl", "report.json")
+             "unresolved_conflicts.jsonl", "before_report.json", "after_report.json", "report.json")
     artifacts = []
     for name in names:
         path = output_dir / name
         if path.is_file():
             artifacts.append({"name": name, "sha256": file_sha256(path), "bytes": path.stat().st_size})
-        elif name in {"users_clean.dat", "movies_clean.dat", "ratings_clean.dat", "report.json"}:
+        elif name in {"users_clean.dat", "movies_clean.dat", "ratings_clean.dat", "report.json"} or (
+            report.get("engine") == "hadoop-streaming" and "phase_jobs" in report
+            and name in {"before_report.json", "after_report.json"}
+        ):
             raise RuntimeError(f"Required output missing: {name}")
     manifest = {
         "schema_version": 1,

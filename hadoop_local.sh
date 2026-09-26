@@ -11,7 +11,15 @@ if [ ! -f "$streaming_jar" ]; then
   exit 1
 fi
 
-export JAVA_HOME=/opt/homebrew/opt/openjdk@17
+if [ -z "${JAVA_HOME:-}" ]; then
+  if [ -x /usr/libexec/java_home ]; then
+    JAVA_HOME=$(/usr/libexec/java_home)
+  else
+    echo "Set JAVA_HOME to a compatible JDK before starting Hadoop." >&2
+    exit 1
+  fi
+fi
+export JAVA_HOME
 export PATH="$hadoop_dir/bin:$PATH"
 export HADOOP_STREAMING_JAR="$streaming_jar"
 export LAB2_HADOOP_LOCAL=1
