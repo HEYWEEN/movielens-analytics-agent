@@ -66,7 +66,7 @@
     textarea:focus { border-color: #a9cfc1; border-radius: 8px; background: #fcfefd; }
     .composer-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 9px; padding-top: 10px; border-top: 1px solid #e9efec; }
     .field { min-width: 0; }
-    .field span { display: block; font-size: 12px; font-weight: 650; color: var(--muted); margin: 0 0 5px 2px; }
+    .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 0 8px 2px; }
     select { appearance: none; width: 100%; min-height: 36px; border: 1px solid var(--line); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' stroke='%2352636d' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 11px center; border-radius: 8px; padding: 6px 28px 6px 10px; color: var(--ink); font-size: 12px; text-overflow: ellipsis; }
     .send { min-height: 36px; min-width: 74px; padding: 7px 15px; border: 0; border-radius: 8px; color: #fff; background: var(--green); font-size: 13px; font-weight: 700; box-shadow: 0 3px 8px #12695522; }
     .send:hover:not(:disabled) { background: #0e5948; transform: translateY(-1px); }
@@ -107,11 +107,75 @@
     .version-line { border-top: 1px solid #e9efec; margin: 20px 0 0; padding-top: 15px; color: #687a83; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
     .notice { margin-top: 12px; padding: 9px 11px; border-radius: 8px; background: #f8faf9; color: var(--muted); font-size: 12px; line-height: 1.55; }
     .notice.error { background: #fff3f1; color: #9b3d32; }
+    /* Calm surfaces, with stronger emphasis on the actual result. */
+    .shell { padding-top: 30px; }
+    .workspace, .sidebar { gap: 22px; }
+    .panel { border-color: #dce8e2; border-radius: 22px; box-shadow: 0 18px 46px #173d2d0b, 0 3px 10px #173d2d06; }
+    .conversation, .sidebar .panel { padding: 25px; }
+    .panel-head { margin-bottom: 20px; }
+    .conversation-body { padding: 28px; gap: 22px; border-color: #e4eee9; border-radius: 17px; background: linear-gradient(155deg, #fcfefd 0%, #f6faf8 100%); }
+    #messages { gap: 22px; }
+    .message { gap: 13px; }
+    .avatar { width: 38px; height: 38px; border: 1px solid #d7e9df; background: linear-gradient(145deg, #f1faf5, #e2f0e8); box-shadow: 0 3px 10px #173d2d10, inset 0 1px 0 #fff; }
+    .avatar svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .user .avatar { border-color: #d8e2e5; background: linear-gradient(145deg, #f4f7f8, #e8eef0); color: #506772; }
+    .bubble { padding: 15px 18px; border: 1px solid #e4ebe8; border-radius: 17px; background: #fff; box-shadow: 0 7px 20px #173d2d0a; line-height: 1.7; }
+    .user .bubble { border-color: #cfe7dc; background: #eaf6ef; border-top-right-radius: 6px; }
+    .assistant .bubble { border-top-left-radius: 6px; }
+    .timeline { border-color: #e3eee8; border-radius: 16px; background: #fff; padding: 18px 20px; box-shadow: 0 8px 24px #173d2d08; }
+    .composer { position: relative; margin-top: 18px; padding: 19px; border-color: #d7e6dd; border-radius: 19px; background: #fff; box-shadow: 0 12px 30px #173d2d0b; }
+    textarea { min-height: 92px; padding: 8px 10px 14px; font-size: 15px; line-height: 1.7; }
+    textarea:focus { border-color: transparent; background: transparent; }
+    .composer:focus-within { border-color: #a9d2bf; box-shadow: 0 0 0 4px #c9e8d93d, 0 16px 34px #173d2d10; }
+    .composer-footer { gap: 13px; padding-top: 15px; border-color: #e4eee8; }
+    .picker { position: relative; min-width: 0; }
+    .picker-trigger { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #d9e6df; border-radius: 12px; padding: 9px 13px; background: #f9fcfa; color: var(--ink); font-size: 13px; font-weight: 650; text-align: left; box-shadow: inset 0 1px 0 #fff; transition: background .2s, border-color .2s, box-shadow .2s, transform .2s; }
+    .picker-trigger:hover { background: #f1f8f4; border-color: #a8d0bc; }
+    .picker-trigger:focus-visible { outline: 3px solid #8fc9b8; outline-offset: 2px; }
+    .picker.open .picker-trigger { border-color: #7bb79a; background: #f0f8f3; box-shadow: 0 0 0 3px #c8e9d7b8; }
+    .picker-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .picker-chevron { width: 8px; height: 8px; flex: none; border-right: 2px solid #54796a; border-bottom: 2px solid #54796a; transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
+    .picker.open .picker-chevron { transform: rotate(225deg) translateY(-1px); }
+    .picker-menu { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 8px); max-height: 230px; overflow-y: auto; padding: 6px; border: 1px solid #d6e6dc; border-radius: 14px; background: #fff; box-shadow: 0 20px 44px #173d2d1f, 0 4px 12px #173d2d0d; }
+    .picker-menu[hidden] { display: none; }
+    .picker-option { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 9px; border: 0; border-radius: 9px; padding: 9px 11px; background: transparent; color: var(--ink); text-align: left; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .picker-option:hover, .picker-option:focus-visible { background: #edf7f1; outline: none; }
+    .picker-option[aria-selected="true"] { background: #e7f4eb; color: var(--green); font-weight: 750; }
+    .picker-check { color: var(--green); font-size: 17px; }
+    .send { min-height: 44px; padding: 10px 19px; border-radius: 12px; box-shadow: 0 8px 18px #12695529; transition: background .2s, transform .2s, box-shadow .2s; }
+    .send:hover:not(:disabled) { box-shadow: 0 11px 22px #12695536; }
+    .quality .panel-head, .evidence .panel-head { margin-bottom: 18px; }
+    .quality-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr)); gap: 13px; }
+    .metric { display: flex; flex-direction: column; min-width: 0; min-height: 218px; padding: 18px; border: 1px solid #dfeae4; border-radius: 17px; background: linear-gradient(160deg, #fff 10%, #f8fbf9 100%); box-shadow: 0 7px 20px #173d2d08; }
+    .metric-head { display: flex; align-items: flex-start; gap: 10px; }
+    .metric-icon { width: 35px; height: 35px; flex: none; display: grid; place-items: center; border-radius: 11px; color: var(--green); background: #eaf5ee; }
+    .metric-icon svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.75; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .metric-name { display: block; font-size: 15px; line-height: 1.25; }
+    .metric-name-cn { display: block; margin-top: 3px; color: #7a8d84; font-size: 11px; font-weight: 600; }
+    .metric-help { min-height: 32px; margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .metric-value { display: block; margin: 14px 0 4px; color: var(--green); font-size: clamp(25px, 2vw, 30px); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.045em; line-height: 1.1; white-space: nowrap; }
+    .metric-unit { display: block; margin-bottom: 5px; color: #748b7e; font-size: 11px; font-weight: 650; letter-spacing: 0; }
+    .metric-before { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .metric-delta { width: fit-content; margin-top: 14px; padding: 5px 8px; border-radius: 7px; background: #edf3ef; font-size: 12px; font-weight: 750; }
+    .metric-delta.good { background: #e5f5eb; } .metric-delta.bad { background: #fff0ed; }
+    .metric-pending { margin-top: 13px; font-size: 12px; }
+    .metric-detail { width: 100%; margin-top: auto; padding-top: 12px; border-top: 1px solid #e4ede8; }
+    .metric-detail summary { display: flex; align-items: center; justify-content: space-between; color: #496a5a; font-size: 12px; font-weight: 700; list-style: none; }
+    .metric-detail summary::-webkit-details-marker { display: none; }
+    .metric-detail summary:after { content: "＋"; font-size: 15px; line-height: 1; }
+    .metric-detail[open] summary:after { content: "−"; }
+    .metric-detail-body { padding-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.6; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .metric-detail-body b { color: var(--ink); }
+    .evidence-links a { border-radius: 10px; background: #f8fbf9; }
+    .evidence-links a:hover { background: #edf7f1; border-color: #a9d3bb; text-decoration: none; }
+    .details { padding: 29px; }
+    .detail-block { padding: 11px 0; }
+    .quiet-button { border-radius: 11px; min-height: 38px; padding-inline: 13px; }
     [hidden] { display: none !important; }
     @keyframes arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
-    @media (max-width: 1050px) { .workspace { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .85fr); } .tagline { display: none; } .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 760px) { .shell { padding: 17px 14px 40px; } .topbar { align-items: flex-start; margin-bottom: 17px; } .topmeta { flex-direction: column; align-items: flex-end; gap: 5px; } .task-short { display: none; } .workspace { display: flex; flex-direction: column; } .conversation { min-height: 0; padding: 15px; } .conversation-body { min-height: 330px; padding: 16px 12px; } .message { max-width: 100%; } .timeline { margin-left: 0; } .sidebar { display: contents; }  .composer-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); } .send { width: 100%; } .quality-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .details-grid { grid-template-columns: 1fr; gap: 12px; } }
-    @media (max-width: 520px) { h1 { font-size: 18px; white-space: normal; } .brandmark { width: 28px; } .topmeta { font-size: 11px; } .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .composer-footer { grid-template-columns: 1fr 1fr; } .field:last-of-type { grid-column: 1 / 2; } .send { grid-column: 2 / 3; } }
+    @media (max-width: 1050px) { .workspace { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .85fr); } .tagline { display: none; } }
+    @media (max-width: 760px) { .shell { padding: 17px 14px 40px; } .topbar { align-items: flex-start; margin-bottom: 17px; } .topmeta { flex-direction: column; align-items: flex-end; gap: 5px; } .task-short { display: none; } .workspace { display: flex; flex-direction: column; } .conversation { min-height: 0; padding: 15px; } .conversation-body { min-height: 330px; padding: 16px 12px; } .message { max-width: 100%; } .timeline { margin-left: 0; } .sidebar { display: contents; }  .composer-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); } .send { width: 100%; } .details-grid { grid-template-columns: 1fr; gap: 12px; } }
+    @media (max-width: 520px) { h1 { font-size: 18px; white-space: normal; } .brandmark { width: 28px; } .topmeta { font-size: 11px; } .composer-footer { grid-template-columns: 1fr 1fr; } .field:last-of-type { grid-column: 1 / 2; } .send { grid-column: 2 / 3; } }
     @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
 </head>
@@ -138,9 +202,9 @@
         <label for="prompt" class="sr-only">输入请求或追问</label>
         <textarea id="prompt" aria-label="输入请求或追问">请使用默认规则清洗 MovieLens 1M，评估清洗前后的五个质量维度，并说明异常处置。</textarea>
         <div class="composer-footer">
-          <label class="field"><span>数据版本</span><select id="dataVersion" aria-label="数据版本"></select></label>
-          <label class="field"><span>规则版本</span><select id="ruleVersion" aria-label="规则版本"></select></label>
-          <label class="field"><span>评分配置</span><select id="scoreConfig" aria-label="评分配置"></select></label>
+          <div class="field"><span class="field-label">数据版本</span><div class="picker" data-select="dataVersion"><select id="dataVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择数据版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="数据版本" hidden></div></div></div>
+          <div class="field"><span class="field-label">规则版本</span><div class="picker" data-select="ruleVersion"><select id="ruleVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择规则版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="规则版本" hidden></div></div></div>
+          <div class="field"><span class="field-label">评分配置</span><div class="picker" data-select="scoreConfig"><select id="scoreConfig" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择评分配置" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="评分配置" hidden></div></div></div>
           <button id="send" class="send" type="button">发送</button>
         </div>
       </div>
@@ -177,6 +241,25 @@
   let taskId = null, timer = null, lastStatus = null;
   const $ = id => document.getElementById(id);
   const names = ['Accurate', 'Complete', 'Unique', 'Up-to-date', 'Consistent'];
+  const scoreMeta = {
+    Accurate: {label:'准确性', help:'字段、引用与未核验状态'},
+    Complete: {label:'完整性', help:'必需字段的非空比例'},
+    Unique: {label:'唯一性', help:'业务记录的去重情况'},
+    'Up-to-date': {label:'时效性', help:'历史参照下近一年评分占比'},
+    Consistent: {label:'一致性', help:'结构、冲突与引用一致'}
+  };
+  const icon = (kind) => {
+    const paths = {
+      user: '<circle cx="12" cy="8" r="3.25"/><path d="M5.5 20c.4-3.4 2.8-5.1 6.5-5.1s6.1 1.7 6.5 5.1"/>',
+      assistant: '<path d="M12 2.5 13.9 9l6.6 3-6.6 3-1.9 6.5L10.1 15l-6.6-3 6.6-3L12 2.5Z"/><path d="m18.5 3 .5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5.5-1.5Z"/>',
+      Accurate: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="m9.7 12 1.5 1.5 3.1-3.2"/>',
+      Complete: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10M13 16l2 2 3-3"/>',
+      Unique: '<rect x="4" y="7" width="11" height="11" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3"/><path d="m8 12 2 2 3-3"/>',
+      'Up-to-date': '<circle cx="12" cy="12" r="9"/><path d="M12 6.5V12l3.5 2"/>',
+      Consistent: '<path d="M4 7h5l2 2h9M4 17h5l2-2h9"/><circle cx="4" cy="7" r="1.2"/><circle cx="4" cy="17" r="1.2"/><path d="m13.5 12 1.5 1.5 3-3"/>'
+    };
+    return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[kind] || paths.assistant}</svg>`;
+  };
   const stages = [
     {id:'prepare', title:'数据检查', detail:'校验数据版本与原始输入'},
     {id:'before', title:'清洗前评分', detail:'计算原始数据的质量基线'},
@@ -190,7 +273,7 @@
   function addMessage(role, content) {
     $('emptyConversation').hidden = true;
     const box = document.createElement('div'); box.className = 'message ' + role;
-    box.innerHTML = `<div class="avatar" aria-hidden="true">${role === 'user' ? '你' : '◆'}</div><div><div class="bubble">${esc(content)}</div><time>${now()}</time></div>`;
+    box.innerHTML = `<div class="avatar" aria-hidden="true">${icon(role)}</div><div><div class="bubble">${esc(content)}</div><time>${now()}</time></div>`;
     $('messages').append(box); box.scrollIntoView({block:'nearest', behavior:'smooth'});
   }
   function resetView() {
@@ -204,7 +287,7 @@
     $('evidenceLinks').innerHTML = '<span>评估报告</span><span>产物清单</span><span>异常记录</span>'; $('evidenceHint').textContent = '任务完成后可查看评估报告、产物校验清单和异常记录。';
     renderPendingScores(); notice('');
   }
-  function renderPendingScores() { $('scores').innerHTML = names.map(name => `<div class="metric"><span class="metric-name">${name}</span><span class="metric-pending">结果将在任务<br>完成后显示</span></div>`).join(''); }
+  function renderPendingScores() { $('scores').innerHTML = names.map(name => `<div class="metric"><div class="metric-head"><span class="metric-icon">${icon(name)}</span><div><span class="metric-name">${scoreMeta[name].label}</span><span class="metric-name-cn">${name}</span></div></div><p class="metric-help">${scoreMeta[name].help}</p><span class="metric-pending">等待本次任务评分</span></div>`).join(''); }
   function stepIndex(stage, status) {
     if (status === 'complete') return 4;
     if (stage === 'local_pipeline') return 1;
@@ -263,8 +346,12 @@
     $('scores').innerHTML = Object.entries(report.raw.scores).map(([name,before]) => {
       const after = report.clean.scores[name], delta = before == null || after == null ? null : after-before;
       const rawEvidence = report.score_evidence?.raw?.[name], cleanEvidence = report.score_evidence?.clean?.[name];
-      const evidence = rawEvidence && cleanEvidence ? `<span class="metric-evidence">分子/分母 ${rawEvidence.numerator}/${rawEvidence.denominator} → ${cleanEvidence.numerator}/${cleanEvidence.denominator}</span>` : '';
-      return `<div class="metric"><span class="metric-name">${esc(name)}</span><strong class="metric-value">${before ?? '—'} → ${after ?? '—'}</strong><span class="metric-delta ${delta > 0 ? 'good' : delta < 0 ? 'bad' : ''}">变化 ${delta == null ? '无法评价' : (delta > 0 ? '+' : '') + delta.toFixed(3)}</span>${evidence}</div>`;
+      const meta = scoreMeta[name] || {label:'质量维度', help:''};
+      const beforeText = before == null ? '—' : Number(before).toFixed(3);
+      const afterText = after == null ? '—' : Number(after).toFixed(3);
+      const deltaText = delta == null ? '暂不可比' : delta > 0 ? `提升 +${delta.toFixed(3)}` : delta < 0 ? `下降 ${delta.toFixed(3)}` : '保持不变';
+      const evidence = rawEvidence && cleanEvidence ? `<details class="metric-detail"><summary>查看计算依据</summary><div class="metric-detail-body"><div><b>清洗前</b> ${rawEvidence.numerator.toLocaleString()}/${rawEvidence.denominator.toLocaleString()}</div><div><b>清洗后</b> ${cleanEvidence.numerator.toLocaleString()}/${cleanEvidence.denominator.toLocaleString()}</div></div></details>` : '';
+      return `<article class="metric"><div class="metric-head"><span class="metric-icon">${icon(name)}</span><div><span class="metric-name">${esc(meta.label)}</span><span class="metric-name-cn">${esc(name)}</span></div></div><p class="metric-help">${esc(meta.help)}</p><strong class="metric-value">${esc(afterText)}</strong><span class="metric-unit">满分 100 分</span><span class="metric-before">清洗前 ${esc(beforeText)}</span><span class="metric-delta ${delta > 0 ? 'good' : delta < 0 ? 'bad' : ''}">${esc(deltaText)}</span>${evidence}</article>`;
     }).join('');
     const interpretation = report.interpretation || {}; const audit = report.reference_audit;
     $('explanations').innerHTML = '<ul>' + Object.entries(report.raw.scores).map(([name]) => `<li><strong>${esc(name)}</strong>：${esc(interpretation[name] || '详见评估报告。')}</li>`).join('') + '</ul>' +
@@ -287,8 +374,62 @@
   $('send').addEventListener('click', send);
   $('newTask').addEventListener('click', () => { resetView(); $('prompt').focus(); });
   $('prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } });
+  function closePickers(except) {
+    document.querySelectorAll('.picker').forEach(picker => {
+      if (picker === except) return;
+      picker.classList.remove('open');
+      picker.querySelector('.picker-trigger').setAttribute('aria-expanded', 'false');
+      picker.querySelector('.picker-menu').hidden = true;
+    });
+  }
+  function setupPicker(id) {
+    const select = $(id);
+    const picker = document.querySelector(`[data-select="${id}"]`);
+    const trigger = picker.querySelector('.picker-trigger');
+    const label = picker.querySelector('.picker-value');
+    const menu = picker.querySelector('.picker-menu');
+    function refresh() {
+      label.textContent = select.selectedOptions[0]?.textContent || '未配置';
+      menu.innerHTML = Array.from(select.options).map(option => `<button type="button" class="picker-option" role="option" data-value="${esc(option.value)}" aria-selected="${option.selected}"><span>${esc(option.textContent)}</span><span class="picker-check" aria-hidden="true">${option.selected ? '✓' : ''}</span></button>`).join('');
+    }
+    function toggle(open) {
+      closePickers(open ? picker : null);
+      picker.classList.toggle('open', open);
+      menu.hidden = !open;
+      trigger.setAttribute('aria-expanded', String(open));
+      if (open) menu.querySelector('[aria-selected="true"]')?.focus();
+    }
+    trigger.addEventListener('click', () => toggle(!picker.classList.contains('open')));
+    trigger.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); toggle(true); }
+    });
+    menu.addEventListener('click', e => {
+      const option = e.target.closest('.picker-option');
+      if (!option) return;
+      select.value = option.dataset.value;
+      refresh();
+      toggle(false);
+      trigger.focus();
+    });
+    menu.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); toggle(false); trigger.focus(); return; }
+      const options = Array.from(menu.querySelectorAll('.picker-option'));
+      const current = options.indexOf(document.activeElement);
+      let next = current;
+      if (e.key === 'ArrowDown') next = (current + 1) % options.length;
+      else if (e.key === 'ArrowUp') next = (current - 1 + options.length) % options.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = options.length - 1;
+      else return;
+      e.preventDefault();
+      options[next]?.focus();
+    });
+    picker.addEventListener('focusout', e => { if (!picker.contains(e.relatedTarget)) toggle(false); });
+    refresh();
+  }
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.picker')) closePickers(); });
   renderPendingScores();
-  getJson('/api/config').then(config => { for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) { $(id).innerHTML = config[key].map(value => `<option value="${esc(value)}" ${value === config.defaults[selected] ? 'selected' : ''}>${esc(value)}</option>`).join(''); } }).catch(e => notice('配置读取失败：' + e.message + '。请通过服务地址打开页面。', true));
+  getJson('/api/config').then(config => { for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) { $(id).innerHTML = config[key].map(value => `<option value="${esc(value)}" ${value === config.defaults[selected] ? 'selected' : ''}>${esc(value)}</option>`).join(''); setupPicker(id); } }).catch(e => notice('配置读取失败：' + e.message + '。请通过服务地址打开页面。', true));
   if (localStorage.lab2TaskId) { taskId = localStorage.lab2TaskId; poll(); }
 </script>
 </body>
