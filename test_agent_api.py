@@ -13,6 +13,33 @@ from movielens_agent.core import deepseek_client
 
 
 class DeepSeekAgentTests(unittest.TestCase):
+    def test_compact_report_preserves_nested_measured_values(self):
+        value = {'report': {'classification': {'algorithms': {'logistic_regression': {
+            'test': {'f1': 0.7454}, 'params': {'C': 1.0}}}}}}
+        compact = server._compact_tool_evidence(value)
+        self.assertEqual(compact['report']['classification']['algorithms']['logistic_regression']['test']['f1'], 0.7454)
+
+    def test_stream_route_delivers_live_events_and_final_answer(self):
+        httpd = ThreadingHTTPServer(('127.0.0.1', 0), server.Handler)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        def fake_chat(*args, **kwargs):
+            kwargs['on_event']({'type': 'phase', 'message': '正在理解你的问题…'})
+            kwargs['on_event']({'type': 'tool_start', 'tool': 'inspect_workspace', 'arguments': {}})
+            return {'status': 'complete', 'reply': '已读取现有结果。'}
+        try:
+            request = Request(f'http://127.0.0.1:{httpd.server_port}/api/agent/stream',
+                              json.dumps({'message': '看看现有结果', 'user_ids': []}).encode(),
+                              {'Content-Type': 'application/json'}, method='POST')
+            with patch.object(server, 'agent_chat_llm', side_effect=fake_chat):
+                with urlopen(request) as response:
+                    self.assertIn('application/x-ndjson', response.headers['Content-Type'])
+                    events = [json.loads(line) for line in response]
+            self.assertEqual([event['type'] for event in events], ['phase', 'tool_start', 'answer'])
+            self.assertEqual(events[-1]['reply'], '已读取现有结果。')
+        finally:
+            httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+
     def test_http_exposes_configuration_and_missing_key_state(self):
         httpd = ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
         thread = threading.Thread(target=httpd.serve_forever, daemon=True)
@@ -61,19 +88,63 @@ class DeepSeekAgentTests(unittest.TestCase):
         self.assertEqual(response["status"], "complete")
         self.assertEqual(response["result"], result)
         self.assertEqual(response["tool_events"][0]["tool"], "predict_high_rating")
-        dispatch.assert_called_once_with("predict_high_rating", {"user_id": 1, "movie_id": 2},
-                                         None, "012345abcdef", None, None, {})
+        dispatch.assert_called_once()
+        self.assertEqual(dispatch.call_args.args[:2], ("predict_high_rating", {"user_id": 1, "movie_id": 2}))
+        self.assertEqual(dispatch.call_args.args[3], "012345abcdef")
         self.assertEqual(call.call_count, 2)
         self.assertEqual(call.call_args.args[0][-1]["role"], "tool")
 
-    def test_factual_answer_without_tool_is_not_presented_as_verified(self):
+    def test_general_analysis_question_can_be_answered_without_forced_ids(self):
         response = {"message": {"role": "assistant", "content": "该用户属于群体 1。"},
                     "model": "deepseek-flash", "finish_reason": "stop"}
+        response['message']['content'] = '聚类用于理解用户偏好；你希望看整体还是某位用户？'
         with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "private-test-key"}), \
              patch.object(server, "deepseek_complete", return_value=response):
-            actual = server.agent_chat_llm("用户 1 属于哪个群体？")
-        self.assertEqual(actual["error"], "evidence_required")
-        self.assertNotIn("群体 1。", actual["reply"])
+            actual = server.agent_chat_llm("聚类分析能帮助我做什么？")
+        self.assertEqual(actual['status'], 'complete')
+        self.assertEqual(actual['evidence_status'], 'general_explanation')
+        self.assertIn('聚类用于', actual['reply'])
+
+    def test_empty_optional_user_list_does_not_block_greeting(self):
+        answer = {'message': {'role': 'assistant', 'content': '你好！想了解哪些电影数据？'},
+                  'model': 'deepseek-flash', 'finish_reason': 'stop'}
+        with patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'private-test-key'}), \
+             patch.object(server, 'deepseek_complete', return_value=answer) as model:
+            result = server.agent_chat_llm('你好', selected_user_ids=[])
+        self.assertEqual(result['status'], 'complete')
+        model.assert_called_once()
+
+    def test_model_can_discover_results_then_read_report_in_one_turn(self):
+        def tool(name, call_id):
+            return {'message': {'role': 'assistant', 'content': None, 'tool_calls': [{
+                'id': call_id, 'type': 'function', 'function': {'name': name, 'arguments': '{}'}}]},
+                'model': 'deepseek-flash', 'finish_reason': 'tool_calls'}
+        final = {'message': {'role': 'assistant', 'content': '已读取现有报告，下面解释两种方法的差别。'},
+                 'model': 'deepseek-flash', 'finish_reason': 'stop'}
+        with patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'private-test-key'}), \
+             patch.object(server, 'deepseek_complete', side_effect=[
+                 tool('inspect_workspace', 'call_1'), tool('get_analysis_report', 'call_2'), final]), \
+             patch.object(server, '_tool_dispatch', return_value={'status': 'completed'}) as dispatch:
+            result = server.agent_chat_llm('现有结果说明了什么？')
+        self.assertEqual(result['status'], 'complete')
+        self.assertEqual(dispatch.call_count, 2)
+        self.assertEqual([event['tool'] for event in result['tool_events']],
+                         ['inspect_workspace', 'get_analysis_report'])
+
+    def test_missing_result_can_be_explained_by_model(self):
+        first = {'message': {'role': 'assistant', 'content': None, 'tool_calls': [{
+            'id': 'call_1', 'type': 'function', 'function': {
+                'name': 'get_user_clusters', 'arguments': '{"user_id":1}'}}]},
+                 'model': 'deepseek-flash', 'finish_reason': 'tool_calls'}
+        final = {'message': {'role': 'assistant', 'content': '用户 1 的训练期历史不足，因此没有群体归属；可以查看整体分群。'},
+                 'model': 'deepseek-flash', 'finish_reason': 'stop'}
+        with patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'private-test-key'}), \
+             patch.object(server, 'deepseek_complete', side_effect=[first, final]), \
+             patch.object(server, '_tool_dispatch', return_value={
+                 'status': 'insufficient_history', 'reason': '训练期历史不足'}):
+            result = server.agent_chat_llm('看看这个用户的喜好')
+        self.assertIn('整体分群', result['reply'])
+        self.assertEqual(result['status'], 'unavailable')
 
     def test_provider_request_uses_environment_key_and_returns_model_id(self):
         provider = {"choices": [{"message": {"role": "assistant", "content": "你好"},

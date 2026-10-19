@@ -2,7 +2,7 @@
 
 以 MovieLens 1M 为基础，逐轮建设可追溯的数据治理与分析 Agent。当前已实现**迭代一数据治理**和**迭代二分类、聚类、降维**：先校验和清洗课程数据，再用清洗数据训练六个独立算法工具，在网页中发起分析、查看真实报告、二维坐标和证据，并通过 DeepSeek 围绕已发布结果对话。第三轮知识图谱尚未实现。
 
-迭代二对话使用 DeepSeek tool calling：大模型选择已登记工具并解释返回内容，实际预测、指标和版本来自分析产物；未配置密钥、缺少模型或版本校验失败时会明确返回不可用。迭代一原有的 `/api/chat` 规则入口仍可单独使用。`pipeline.py` 是清洗和五维评分规则的唯一实现；本地模式与 Hadoop 模式调用同一套规则。Hadoop 模式使用三个独立作业，当前为单机 Hadoop / 单 reducer，尚未验证多节点扩展。
+迭代二对话使用 DeepSeek tool calling：用户直接输入自然语言，模型根据目标发现已有任务、连续调用已登记工具，再解释实际结果。普通问候、方法讨论和澄清问题可以直接对话，查询整体报告不要求填写用户 ID。实际预测、指标和版本来自分析产物；未配置密钥、缺少模型或版本校验失败时会明确返回不可用。迭代一原有的 `/api/chat` 规则入口仍可单独使用。`pipeline.py` 是清洗和五维评分规则的唯一实现；本地模式与 Hadoop 模式调用同一套规则。Hadoop 模式使用三个独立作业，当前为单机 Hadoop / 单 reducer，尚未验证多节点扩展。
 
 ## 运行
 
@@ -120,7 +120,7 @@ movielens-analytics-agent/
 
 ## 任务与产物
 
-迭代一原有 `POST /api/chat` 发起任务或追问；`GET /api/tasks/<id>` 查询状态；`/report`、`/sample?table=ratings`、`/unresolved`、`/manifest` 分别获取报告、样例、未核验冲突及产物清单。迭代二使用 `POST /api/agent/chat` 对话，`GET /api/source-tasks` 选择已验证来源，`POST /api/analysis/tasks` 发起训练，`GET /api/analysis/tasks/<id>` 读取进度；其 `/report` 与 `/artifacts/<name>` 提供已核验结果与公开产物。清单校验失败时拒绝读取。
+迭代一原有 `POST /api/chat` 发起任务或追问；`GET /api/tasks/<id>` 查询状态；`/report`、`/sample?table=ratings`、`/unresolved`、`/manifest` 分别获取报告、样例、未核验冲突及产物清单。迭代二使用 `POST /api/agent/chat` 对话；网页使用 `POST /api/agent/stream`，以 NDJSON 实时接收理解阶段、工具开始、工具返回与最终回答。`GET /api/source-tasks` 选择已验证来源，`POST /api/analysis/tasks` 发起训练，`GET /api/analysis/tasks/<id>` 读取进度；其 `/report` 与 `/artifacts/<name>` 提供已核验结果与公开产物。清单校验失败时拒绝读取。
 
 任务状态和阶段事件分别写在 `runs/tasks.sqlite3` 与 `runs/analysis_tasks.sqlite3`。服务重启时，未完成的 `queued/running` 任务标记为失败，避免继续显示为运行中；用户可重新提交。当前一次只执行一个耗时任务，其他请求等待执行。SQLite 只保存任务元数据，数据文件仍位于 `runs/<task_id>/` 或 `runs/iteration2/<analysis_task_id>/`。
 

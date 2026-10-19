@@ -67,7 +67,9 @@ KMeans 和 Ward 层次聚类在相同 5,301 位用户、相同 37 维训练画�
 
 网页提供会话、进度、三类分析对照、二维图、来源文件和追问。`POST /api/agent/chat` 只通过 DeepSeek 选择已登记工具；六个算法各有独立工具，也可请求同类双算法对照。用户可以指定 `UserID`/`MovieID`、1–20 个用户的集合、群体数、目标维数或信息保留阈值。用户集合只筛选已发布模型的查询结果和坐标，不会仅对这批用户重新拟合模型；改变群体数、维数或阈值要创建新任务。未知 ID、历史不足、模型未完成和与已发布配置不一致的请求均返回明确状态。无密钥时，报告和算法任务仍可通过页面入口及 API 访问，但对话返回 `missing_api_key`。
 
-默认任务产物：`report.json`（切分、配置、指标、限制）、`models.joblib`（已训练模型与冻结状态）、`profiles.json`（完整画像）、`clusters.json`（群体）、`coordinates.json`（完整降维坐标）、`manifest.json`（摘要与版本）。这些文件在 `runs/iteration2/<analysis_task_id>/`，均被 Git 忽略。DeepSeek API Key 不进入前端、报告或仓库；**本次没有可用密钥，因此只验证了本地工具派发和模拟 API 响应，尚未验证真实外部 DeepSeek 调用**。
+默认任务产物：`report.json`（切分、配置、指标、限制）、`models.joblib`（已训练模型与冻结状态）、`profiles.json`（完整画像）、`clusters.json`（群体）、`coordinates.json`（完整降维坐标）、`manifest.json`（摘要与版本）。这些文件在 `runs/iteration2/<analysis_task_id>/`，均被 Git 忽略。DeepSeek API Key 只保留在服务端进程环境，不进入前端、报告或仓库。
+
+2026-10-19 使用真实 `deepseek-flash` 验证了问候、现有报告解读、连续工具调用和自然语言任务创建：“635号用户会喜欢1号电影吗”实际调用分类对照；“分成3个群体并压缩到2维”被解析为 `n_clusters=3, target_dimensions=2`，创建任务 `220d6e6c420e` 并完成清单验收。验证记录保存在本机忽略目录 `runs/agent-validation/20261019/live-check.json`。网页通过 `/api/agent/stream` 实时展示阶段和工具事件；输入空用户集合不再阻止普通对话。工具提供了真实指标，但模型的因果、显著性和可靠性推论仍需审阅；这些调用验证不能等同于对所有模型解释的正确性证明。
 
 ## 复现与核查
 
