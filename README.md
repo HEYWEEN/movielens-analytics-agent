@@ -120,7 +120,7 @@ movielens-analytics-agent/
 
 ## 任务与产物
 
-迭代一原有 `POST /api/chat` 发起任务或追问；`GET /api/tasks/<id>` 查询状态；`/report`、`/sample?table=ratings`、`/unresolved`、`/manifest` 分别获取报告、样例、未核验冲突及产物清单。迭代二使用 `POST /api/agent/chat` 对话；网页使用 `POST /api/agent/stream`，以 NDJSON 实时接收理解阶段、工具开始、工具返回与最终回答。`GET /api/source-tasks` 选择已验证来源，`POST /api/analysis/tasks` 发起训练，`GET /api/analysis/tasks/<id>` 读取进度；其 `/report` 与 `/artifacts/<name>` 提供已核验结果与公开产物。清单校验失败时拒绝读取。
+迭代一原有 `POST /api/chat` 发起任务或追问；`GET /api/tasks/<id>` 查询状态；`/report`、`/sample?table=ratings`、`/unresolved`、`/manifest` 分别获取报告、样例、未核验冲突及产物清单。迭代二使用 `POST /api/agent/chat` 对话；网页使用 `POST /api/agent/stream`，以 NDJSON 实时接收阶段、工具事件、模型文本增量与最终回答。模型端使用 DeepSeek SSE 流，网页边接收边显示，回复完成后保存会话；中断时保留已接收文字并提示未完成。`GET /api/source-tasks` 选择已验证来源，`POST /api/analysis/tasks` 发起训练，`GET /api/analysis/tasks/<id>` 读取进度；其 `/report` 与 `/artifacts/<name>` 提供已核验结果与公开产物。清单校验失败时拒绝读取。
 
 任务状态和阶段事件分别写在 `runs/tasks.sqlite3` 与 `runs/analysis_tasks.sqlite3`。服务重启时，未完成的 `queued/running` 任务标记为失败，避免继续显示为运行中；用户可重新提交。当前一次只执行一个耗时任务，其他请求等待执行。SQLite 只保存任务元数据，数据文件仍位于 `runs/<task_id>/` 或 `runs/iteration2/<analysis_task_id>/`。
 

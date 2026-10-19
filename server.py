@@ -773,10 +773,18 @@ def agent_chat_llm(message, source_task_id=None, analysis_task_id=None, history=
     try:
         for round_index in range(6):
             emit("phase", message="正在理解你的问题…" if round_index == 0 else "正在结合工具结果分析…")
-            completion = deepseek_complete(messages, ANALYSIS_TOOLS)
+            emit("response_start")
+            if on_event:
+                completion = deepseek_complete(messages, ANALYSIS_TOOLS,
+                    on_delta=lambda text: emit("delta", text=text))
+            else:
+                completion = deepseek_complete(messages, ANALYSIS_TOOLS)
             model_id = completion["model"]
             call_message = completion["message"]
             calls = call_message.get("tool_calls") or []
+            if calls and completion["finish_reason"] != "tool_calls":
+                return response("模型的工具请求尚未完成，请重试；已返回的结果仍可查看。",
+                                "failed", "incomplete_model_response")
             if not calls:
                 answer = call_message.get("content")
                 if completion["finish_reason"] != "stop" or not isinstance(answer, str) or not answer.strip():
