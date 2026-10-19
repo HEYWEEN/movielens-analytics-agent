@@ -3,239 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MovieLens 数据治理 Agent</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23126955' d='M16 1 1 16l4 4L20 5l-4-4ZM23 7 7 23l4 4 16-16-4-4Zm6 6L13 29l4 2 14-14-2-4Z'/%3E%3C/svg%3E">
+  <title>MovieLens Agent · 分析工作台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23126752'/%3E%3Cpath d='m8 23 5-14 3 8 3-6 5 12' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5'/%3E%3C/svg%3E">
   <style>
-    :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; color: #15232c; background: #f3f6f5; --green: #126955; --ink: #15232c; --muted: #52636d; --line: #dbe5e2; --soft: #f6f9f8; }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin: 0; min-width: 320px; }
-    button, select, textarea { font: inherit; }
-    button { cursor: pointer; }
-    button:disabled { cursor: not-allowed; opacity: .55; }
-    button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid #8fc9b8; outline-offset: 3px; }
-    a { color: var(--green); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .shell { max-width: 1580px; margin: 0 auto; padding: 24px clamp(18px, 3vw, 44px) 64px; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
-    .identity { display: flex; align-items: center; min-width: 0; gap: 14px; }
-    .brandmark { width: 34px; height: 34px; display: grid; place-items: center; color: var(--green); flex: none; }
-    .brandmark svg { width: 32px; height: 32px; }
-    h1 { font-size: clamp(20px, 1.65vw, 25px); line-height: 1.25; letter-spacing: -.025em; margin: 0; white-space: nowrap; }
-    .tagline { margin: 0 0 0 12px; font-size: 13px; color: #687a83; white-space: nowrap; }
-    .topmeta { display: flex; align-items: center; gap: 12px; flex: none; color: var(--muted); font-size: 12px; }
-    .engine-pill, .state-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 8px 11px; white-space: nowrap; }
-    .engine-pill:before, .state-pill:before { content: ""; width: 7px; height: 7px; background: #91a29d; border-radius: 50%; }
-    .engine-pill.active:before, .state-pill.running:before, .state-pill.complete:before { background: var(--green); }
-    .state-pill.failed:before { background: #b04435; }
-    .task-short { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .workspace { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr); align-items: start; gap: 18px; }
-    .panel { background: #fff; border: 1px solid var(--line); border-radius: 15px; box-shadow: 0 9px 30px #1933270a, 0 1px 2px #19332708; }
-    .conversation { padding: 20px; min-height: 0; display: flex; flex-direction: column; }
-    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; margin-bottom: 16px; }
-    h2 { margin: 0; font-size: 18px; line-height: 1.3; letter-spacing: -.015em; }
-    h3 { margin: 0; font-size: 15px; }
-    .quiet-button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 9px; min-height: 34px; padding: 6px 11px; font-size: 12px; font-weight: 600; }
-    .quiet-button:hover { border-color: #a7bdb5; background: var(--soft); }
-    .conversation-body { border: 1px solid #e6eeea; border-radius: 12px; background: linear-gradient(#fff, #fff 78%, #fbfdfc); min-height: 280px; padding: 22px; flex: 1; display: flex; flex-direction: column; gap: 18px; }
-    .empty-conversation { margin: auto; max-width: 430px; text-align: center; }
-    .empty-icon { width: 48px; height: 48px; display: grid; place-items: center; margin: 0 auto 16px; color: var(--green); background: #eaf5f0; border-radius: 14px; font-size: 23px; }
-    .empty-conversation h3 { font-size: 17px; margin-bottom: 8px; }
-    .empty-conversation p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
-    #messages { display: flex; flex-direction: column; gap: 18px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-    .message { display: flex; gap: 12px; max-width: 92%; animation: arrive .28s ease-out both; }
-    .message.user { align-self: flex-end; flex-direction: row-reverse; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #e9f4ef; color: var(--green); display: grid; place-items: center; flex: none; font-weight: 750; font-size: 14px; }
-    .user .avatar { background: #e8eef0; color: #52636d; }
-    .bubble { padding: 12px 15px; border-radius: 12px; background: #f1f5f5; color: var(--ink); line-height: 1.62; font-size: 14px; overflow-wrap: anywhere; }
-    .user .bubble { background: #e9f5f0; border-top-right-radius: 4px; }
-    .assistant .bubble { border-top-left-radius: 4px; }
-    .message time { display: block; margin-top: 5px; font-size: 11px; color: #7b8b92; }
-    .timeline { margin: 0 0 0 44px; border: 1px solid #edf2ef; border-radius: 12px; background: #fafcfb; padding: 12px 16px; }
-    .step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; position: relative; min-height: 57px; }
-    .step:last-child { min-height: 34px; }
-    .step:not(:last-child):before { content: ""; position: absolute; left: 11px; top: 24px; bottom: -4px; border-left: 1px dashed #bdcec7; }
-    .step-dot { width: 23px; height: 23px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #c9d6d1; background: #fff; color: #fff; font-size: 12px; font-weight: 700; z-index: 1; }
-    .step.done .step-dot { background: var(--green); border-color: var(--green); }
-    .step.active .step-dot { border-color: var(--green); box-shadow: 0 0 0 4px #e8f4ee; }
-    .step-title { font-size: 13px; font-weight: 650; margin: 2px 0 3px; }
-    .step-detail { font-size: 12px; color: #687a83; line-height: 1.45; margin: 0 0 11px; }
-    .composer { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #19332708; }
-    textarea { width: 100%; min-height: 68px; resize: vertical; border: 1px solid transparent; background: transparent; padding: 7px 9px; outline: none; color: var(--ink); line-height: 1.55; font-size: 14px; }
-    textarea:focus { border-color: #a9cfc1; border-radius: 8px; background: #fcfefd; }
-    .composer-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 9px; padding-top: 10px; border-top: 1px solid #e9efec; }
-    .field { min-width: 0; }
-    .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 0 8px 2px; }
-    select { appearance: none; width: 100%; min-height: 36px; border: 1px solid var(--line); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' stroke='%2352636d' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 11px center; border-radius: 8px; padding: 6px 28px 6px 10px; color: var(--ink); font-size: 12px; text-overflow: ellipsis; }
-    .send { min-height: 36px; min-width: 74px; padding: 7px 15px; border: 0; border-radius: 8px; color: #fff; background: var(--green); font-size: 13px; font-weight: 700; box-shadow: 0 3px 8px #12695522; }
-    .send:hover:not(:disabled) { background: #0e5948; transform: translateY(-1px); }
-    .sidebar { display: flex; flex-direction: column; gap: 18px; }
-    .sidebar .panel { padding: 20px; }
-    .overview dl { display: grid; grid-template-columns: 82px 1fr; gap: 15px 10px; margin: 18px 0 0; font-size: 13px; }
-    dt { color: var(--muted); } dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-    .progress-track { width: 100%; max-width: 230px; height: 8px; border-radius: 99px; background: #e6edeb; overflow: hidden; margin-top: 4px; }
-    .progress-fill { width: 0; height: 100%; background: var(--green); border-radius: inherit; transition: width .55s ease; }
-    .quality .panel-head, .evidence .panel-head { margin-bottom: 14px; }
-    .quality-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
-    .metric { min-width: 0; min-height: 116px; padding: 13px 10px; border: 1px solid #e5ede9; border-radius: 10px; background: #fafcfb; }
-    .metric-name { color: var(--ink); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
-    .metric-value { display: block; font-size: 19px; font-weight: 760; font-variant-numeric: tabular-nums; letter-spacing: -.03em; margin: 14px 0 5px; }
-    .metric-pending { display: block; color: #7a8a91; font-size: 12px; line-height: 1.5; margin-top: 19px; }
-    .metric-delta { color: var(--muted); font-size: 11px; line-height: 1.4; }
-    .metric-delta.good { color: var(--green); } .metric-delta.bad { color: #b04435; }
-    .metric-evidence { display: block; color: #71828a; font-size: 11px; margin-top: 6px; line-height: 1.4; overflow-wrap: anywhere; }
-    .evidence p { margin: 0 0 14px; font-size: 12px; color: var(--muted); line-height: 1.6; }
-    .evidence-links { display: flex; flex-wrap: wrap; gap: 8px; }
-    .evidence-links a, .evidence-links span { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 8px 10px; font-size: 12px; font-weight: 650; }
-    .evidence-links span { color: #9aa8ad; background: #f8faf9; }
-    .details { margin-top: 18px; padding: 24px; }
-    .details[hidden] { display: none; }
-    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-    .detail-block { min-width: 0; padding: 8px 0; }
-    .detail-block h3 { margin-bottom: 12px; }
-    .detail-block p, .detail-block li { font-size: 13px; line-height: 1.7; color: var(--muted); }
-    .detail-block ul { padding-left: 20px; margin: 10px 0; }
-    .detail-block strong { color: var(--ink); }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
-    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e8efeb; white-space: nowrap; }
-    th { color: var(--muted); font-weight: 650; }
-    details { border-top: 1px solid #e9efec; padding-top: 13px; margin-top: 14px; }
-    summary { color: var(--green); cursor: pointer; font-size: 13px; font-weight: 650; }
-    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--soft); border-radius: 9px; padding: 12px; font-size: 11px; line-height: 1.6; }
-    .version-line { border-top: 1px solid #e9efec; margin: 20px 0 0; padding-top: 15px; color: #687a83; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
-    .notice { margin-top: 12px; padding: 9px 11px; border-radius: 8px; background: #f8faf9; color: var(--muted); font-size: 12px; line-height: 1.55; }
-    .notice.error { background: #fff3f1; color: #9b3d32; }
-    /* Calm surfaces, with stronger emphasis on the actual result. */
-    .shell { padding-top: 30px; }
-    .workspace, .sidebar { gap: 22px; }
-    .panel { border-color: #dce8e2; border-radius: 22px; box-shadow: 0 18px 46px #173d2d0b, 0 3px 10px #173d2d06; }
-    .conversation, .sidebar .panel { padding: 25px; }
-    .panel-head { margin-bottom: 20px; }
-    .conversation-body { padding: 28px; gap: 22px; border-color: #e4eee9; border-radius: 17px; background: linear-gradient(155deg, #fcfefd 0%, #f6faf8 100%); }
-    #messages { gap: 22px; }
-    .message { gap: 13px; }
-    .avatar { width: 38px; height: 38px; border: 1px solid #d7e9df; background: linear-gradient(145deg, #f1faf5, #e2f0e8); box-shadow: 0 3px 10px #173d2d10, inset 0 1px 0 #fff; }
-    .avatar svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-    .user .avatar { border-color: #d8e2e5; background: linear-gradient(145deg, #f4f7f8, #e8eef0); color: #506772; }
-    .bubble { padding: 15px 18px; border: 1px solid #e4ebe8; border-radius: 17px; background: #fff; box-shadow: 0 7px 20px #173d2d0a; line-height: 1.7; }
-    .user .bubble { border-color: #cfe7dc; background: #eaf6ef; border-top-right-radius: 6px; }
-    .assistant .bubble { border-top-left-radius: 6px; }
-    .timeline { border-color: #e3eee8; border-radius: 16px; background: #fff; padding: 18px 20px; box-shadow: 0 8px 24px #173d2d08; }
-    .composer { position: relative; margin-top: 18px; padding: 19px; border-color: #d7e6dd; border-radius: 19px; background: #fff; box-shadow: 0 12px 30px #173d2d0b; }
-    textarea { min-height: 92px; padding: 8px 10px 14px; font-size: 15px; line-height: 1.7; }
-    textarea:focus { border-color: transparent; background: transparent; }
-    .composer:focus-within { border-color: #a9d2bf; box-shadow: 0 0 0 4px #c9e8d93d, 0 16px 34px #173d2d10; }
-    .composer-footer { gap: 13px; padding-top: 15px; border-color: #e4eee8; }
-    .picker { position: relative; min-width: 0; }
-    .picker-trigger { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #d9e6df; border-radius: 12px; padding: 9px 13px; background: #f9fcfa; color: var(--ink); font-size: 13px; font-weight: 650; text-align: left; box-shadow: inset 0 1px 0 #fff; transition: background .2s, border-color .2s, box-shadow .2s, transform .2s; }
-    .picker-trigger:hover { background: #f1f8f4; border-color: #a8d0bc; }
-    .picker-trigger:focus-visible { outline: 3px solid #8fc9b8; outline-offset: 2px; }
-    .picker.open .picker-trigger { border-color: #7bb79a; background: #f0f8f3; box-shadow: 0 0 0 3px #c8e9d7b8; }
-    .picker-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .picker-chevron { width: 8px; height: 8px; flex: none; border-right: 2px solid #54796a; border-bottom: 2px solid #54796a; transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
-    .picker.open .picker-chevron { transform: rotate(225deg) translateY(-1px); }
-    .picker-menu { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 8px); max-height: 230px; overflow-y: auto; padding: 6px; border: 1px solid #d6e6dc; border-radius: 14px; background: #fff; box-shadow: 0 20px 44px #173d2d1f, 0 4px 12px #173d2d0d; }
-    .picker-menu[hidden] { display: none; }
-    .picker-option { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 9px; border: 0; border-radius: 9px; padding: 9px 11px; background: transparent; color: var(--ink); text-align: left; font-size: 13px; font-variant-numeric: tabular-nums; }
-    .picker-option:hover, .picker-option:focus-visible { background: #edf7f1; outline: none; }
-    .picker-option[aria-selected="true"] { background: #e7f4eb; color: var(--green); font-weight: 750; }
-    .picker-check { color: var(--green); font-size: 17px; }
-    .send { min-height: 44px; padding: 10px 19px; border-radius: 12px; box-shadow: 0 8px 18px #12695529; transition: background .2s, transform .2s, box-shadow .2s; }
-    .send:hover:not(:disabled) { box-shadow: 0 11px 22px #12695536; }
-    .quality .panel-head, .evidence .panel-head { margin-bottom: 18px; }
-    .quality-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr)); gap: 13px; }
-    .metric { display: flex; flex-direction: column; min-width: 0; min-height: 218px; padding: 18px; border: 1px solid #dfeae4; border-radius: 17px; background: linear-gradient(160deg, #fff 10%, #f8fbf9 100%); box-shadow: 0 7px 20px #173d2d08; }
-    .metric-head { display: flex; align-items: flex-start; gap: 10px; }
-    .metric-icon { width: 35px; height: 35px; flex: none; display: grid; place-items: center; border-radius: 11px; color: var(--green); background: #eaf5ee; }
-    .metric-icon svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.75; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-    .metric-name { display: block; font-size: 15px; line-height: 1.25; }
-    .metric-name-cn { display: block; margin-top: 3px; color: #7a8d84; font-size: 11px; font-weight: 600; }
-    .metric-help { min-height: 32px; margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
-    .metric-value { display: block; margin: 14px 0 4px; color: var(--green); font-size: clamp(25px, 2vw, 30px); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.045em; line-height: 1.1; white-space: nowrap; }
-    .metric-unit { display: block; margin-bottom: 5px; color: #748b7e; font-size: 11px; font-weight: 650; letter-spacing: 0; }
-    .metric-before { color: var(--muted); font-size: 12px; line-height: 1.5; }
-    .metric-delta { width: fit-content; margin-top: 14px; padding: 5px 8px; border-radius: 7px; background: #edf3ef; font-size: 12px; font-weight: 750; }
-    .metric-delta.good { background: #e5f5eb; } .metric-delta.bad { background: #fff0ed; }
-    .metric-pending { margin-top: 13px; font-size: 12px; }
-    .metric-detail { width: 100%; margin-top: auto; padding-top: 12px; border-top: 1px solid #e4ede8; }
-    .metric-detail summary { display: flex; align-items: center; justify-content: space-between; color: #496a5a; font-size: 12px; font-weight: 700; list-style: none; }
-    .metric-detail summary::-webkit-details-marker { display: none; }
-    .metric-detail summary:after { content: "＋"; font-size: 15px; line-height: 1; }
-    .metric-detail[open] summary:after { content: "−"; }
-    .metric-detail-body { padding-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.6; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-    .metric-detail-body b { color: var(--ink); }
-    .evidence-links a { border-radius: 10px; background: #f8fbf9; }
-    .evidence-links a:hover { background: #edf7f1; border-color: #a9d3bb; text-decoration: none; }
-    .details { padding: 29px; }
-    .detail-block { padding: 11px 0; }
-    .quiet-button { border-radius: 11px; min-height: 38px; padding-inline: 13px; }
-    [hidden] { display: none !important; }
-    @keyframes arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
-    @media (max-width: 1050px) { .workspace { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .85fr); } .tagline { display: none; } }
-    @media (max-width: 760px) { .shell { padding: 17px 14px 40px; } .topbar { align-items: flex-start; margin-bottom: 17px; } .topmeta { flex-direction: column; align-items: flex-end; gap: 5px; } .task-short { display: none; } .workspace { display: flex; flex-direction: column; } .conversation { min-height: 0; padding: 15px; } .conversation-body { min-height: 330px; padding: 16px 12px; } .message { max-width: 100%; } .timeline { margin-left: 0; } .sidebar { display: contents; }  .composer-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); } .send { width: 100%; } .details-grid { grid-template-columns: 1fr; gap: 12px; } }
-    @media (max-width: 520px) { h1 { font-size: 18px; white-space: normal; } .brandmark { width: 28px; } .topmeta { font-size: 11px; } .composer-footer { grid-template-columns: 1fr 1fr; } .field:last-of-type { grid-column: 1 / 2; } .send { grid-column: 2 / 3; } }
-    @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#1c2e28;background:#f3f7f4;--green:#126955;--deep:#174a3b;--ink:#1c2e28;--muted:#667a70;--line:#dbe6df;--soft:#f3f8f5;--warning:#a9681f;--danger:#ae4d43}
+    *{box-sizing:border-box}html,body{height:100%;margin:0}body{min-width:920px}button,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}button:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #82bea1;outline-offset:2px}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .app-shell{height:100vh;min-height:620px;display:grid;grid-template-columns:244px minmax(540px,1fr) 318px;overflow:hidden;background:#fff}
+    .rail{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:#eff5f0;border-right:1px solid #dbe7de;padding:22px 13px 17px}.brand{display:flex;align-items:center;gap:11px;padding:0 9px 25px}.brandmark{width:31px;height:31px;display:grid;place-items:center;flex:none;border-radius:9px;background:var(--green);color:#fff;font-weight:800;font-size:18px;letter-spacing:-.06em;box-shadow:0 5px 12px #12695527}.brand-name{display:block;font-size:14px;font-weight:780;letter-spacing:-.02em;line-height:1.15}.brand-sub{display:block;margin-top:3px;color:#73877a;font-size:10px;letter-spacing:.02em}.new-task{display:flex;align-items:center;gap:9px;width:100%;min-height:39px;padding:0 12px;border:1px solid #a6cfb4;border-radius:10px;background:#e7f3e9;color:#0c6746;text-align:left;font-size:13px;font-weight:720;transition:background .2s,border-color .2s,transform .2s}.new-task:hover{background:#ddf0e3;border-color:#78b892;transform:translateY(-1px)}.new-task svg,.rail-icon svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .rail-section{margin-top:28px;padding:0 10px 10px;color:#789084;font-size:11px;font-weight:700;letter-spacing:.07em}.session-list{min-height:0;overflow:auto;flex:1;padding:0 2px}.session-item{width:100%;min-height:42px;display:flex;align-items:center;gap:9px;border:0;border-radius:9px;padding:9px 10px;background:transparent;text-align:left;color:#456257;font-size:12px;line-height:1.45}.session-item:hover{background:#e6efe8}.session-item.active{background:#dcece1;color:#174e38;font-weight:720}.session-item .rail-icon{display:grid;place-items:center;flex:none;opacity:.7}.session-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.session-empty{margin:6px 10px;color:#819489;font-size:12px;line-height:1.65}.rail-footer{border-top:1px solid #dae8de;padding:15px 9px 1px}.model-line{display:flex;align-items:center;gap:8px;color:#465f51;font-size:12px;font-weight:650}.model-dot{width:7px;height:7px;border-radius:50%;background:#94a8a0}.model-dot.ready{background:var(--green);box-shadow:0 0 0 3px #c9e8d1}.model-dot.unavailable{background:#b98948}.rail-caption{margin-top:5px;color:#82958a;font-size:11px;line-height:1.5}
+    .chat-panel{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:#fff}.chat-header{height:68px;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 30px;border-bottom:1px solid #edf1ee}.header-title{min-width:0}.header-kicker{display:block;color:#789083;font-size:10px;font-weight:700;letter-spacing:.09em}.chat-header h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:3px 0 0;font-size:15px;font-weight:740;letter-spacing:-.015em}.header-meta{display:flex;align-items:center;gap:10px;min-width:0;color:#7b8e83;font-size:11px}.engine-pill{border:1px solid #dce9df;background:#f3faf5;color:#3d6c55;border-radius:6px;padding:5px 8px;white-space:nowrap}.task-short{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}.conversation-body{min-height:0;flex:1;overflow:auto;scrollbar-color:#d2ddd5 transparent;padding:34px clamp(28px,5vw,88px) 48px;display:flex;flex-direction:column;gap:16px}.conversation-body>*{width:100%;max-width:840px;margin-left:auto;margin-right:auto}.empty-conversation{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;padding-bottom:58px}.empty-symbol{width:56px;height:56px;display:grid;place-items:center;background:#e8f4eb;border:1px solid #d6e9dc;border-radius:17px;color:#147651;box-shadow:0 10px 30px #143d2512}.empty-symbol svg{width:29px;height:29px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}.empty-conversation h2{margin:23px 0 7px;font-size:27px;letter-spacing:-.035em}.empty-conversation p{max-width:550px;margin:0;color:#718278;line-height:1.7;font-size:14px}.starter-label{margin:35px 0 10px;color:#87968c;font-size:11px;font-weight:700;letter-spacing:.06em}.starter-list{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.starter{min-height:100px;border:1px solid #dfe9e1;border-radius:13px;background:#fbfdfb;padding:14px;text-align:left;color:var(--ink);box-shadow:0 5px 15px #18422b06;transition:transform .2s,border-color .2s,box-shadow .2s}.starter:hover{transform:translateY(-2px);border-color:#9dcdb0;box-shadow:0 10px 25px #18422b0e}.starter-icon{display:block;color:var(--green);height:22px}.starter-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.starter strong{display:block;margin:4px 0 4px;font-size:13px}.starter span:last-child{display:block;color:#7a8b80;font-size:11px;line-height:1.45}
+    #messages{display:flex;flex-direction:column;gap:24px}.message{display:flex;align-items:flex-start;gap:12px;animation:arrive .25s ease-out both}.message.user{justify-content:flex-end}.message.user .avatar{display:none}.message-content{min-width:0;max-width:85%}.avatar{width:28px;height:28px;display:grid;place-items:center;flex:none;border-radius:8px;background:#e9f4eb;color:var(--green)}.avatar svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.bubble{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.75}.message.user .bubble{border:1px solid #d8eadc;border-radius:15px 15px 4px 15px;background:#ecf7ee;padding:12px 16px}.message.assistant .bubble{padding:3px 0;color:#26372e}.message time{display:block;margin-top:5px;color:#9bab9e;font-size:10px}.message.assistant time{margin-top:10px}.message.user time{text-align:right}.message.error .bubble{color:var(--danger)}
+    .timeline{border-left:2px solid #c8ddcd;margin-top:3px;padding:0 0 0 22px}.step{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;position:relative;min-height:52px}.step:not(:last-child):before{content:"";position:absolute;left:8px;top:21px;bottom:-5px;border-left:1px dashed #c5d8ca}.step-dot{width:18px;height:18px;z-index:1;display:grid;place-items:center;border:1.5px solid #bdcec3;border-radius:50%;background:#fff;color:#fff;font-size:10px;font-weight:800}.step.done .step-dot{border-color:var(--green);background:var(--green)}.step.active .step-dot{border-color:var(--green);box-shadow:0 0 0 4px #e3f2e8}.step-title{margin:0 0 3px;font-size:12px;font-weight:700}.step-detail{margin:0;color:#7c8b80;font-size:11px;line-height:1.5}.task-activity{border:1px solid #dceade;border-radius:11px;background:#f8fbf8;padding:13px 15px;font-size:12px;color:#476354}.task-activity strong{color:#2b533e}.activity-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-weight:750}.activity-icon{width:17px;height:17px;color:var(--green)}.activity-icon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.activity-detail{color:#768b7b;line-height:1.5}
+    .composer-wrap{padding:16px clamp(28px,5vw,88px) 20px;background:linear-gradient(180deg,#ffffff00,#fff 18%)}.composer-wrap>*{max-width:840px;margin-left:auto;margin-right:auto}.composer{border:1px solid #cddfd2;border-radius:16px;background:#fff;box-shadow:0 12px 32px #1c45280d,0 2px 5px #1c452808;transition:border-color .2s,box-shadow .2s}.composer:focus-within{border-color:#78b990;box-shadow:0 0 0 4px #c8e9d136,0 15px 36px #1c452817}textarea{display:block;width:100%;height:64px;min-height:64px;max-height:180px;resize:vertical;padding:16px 17px 6px;border:0;border-radius:16px;background:transparent;color:var(--ink);font-size:14px;line-height:1.65;outline:none}textarea::placeholder{color:#98a99d}.composer-bottom{display:flex;align-items:center;gap:11px;min-height:47px;padding:5px 8px 8px 11px}.tool-toggle{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:8px;background:transparent;padding:6px 8px;color:#52745c;font-size:12px;font-weight:680}.tool-toggle:hover,.tool-toggle[aria-expanded=true]{background:#e9f5eb}.tool-toggle svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.composer-tip{color:#9aab9e;font-size:11px;white-space:nowrap}.composer-spacer{flex:1}.send{width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:9px;background:var(--green);color:#fff;box-shadow:0 5px 12px #12695528;transition:transform .2s,background .2s}.send:hover:not(:disabled){transform:translateY(-2px);background:#0d5745}.send svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}.config-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:9px;padding:15px;border:1px solid #dce8df;border-radius:12px;background:#fbfdfb}.field{min-width:0}.config-divider{grid-column:1/-1;margin-top:5px;padding-top:13px;border-top:1px solid #e3ebe5;color:#365c43;font-size:11px;font-weight:750}.config-divider span{margin-left:7px;color:#94a397;font-weight:500}.config-input{width:100%;height:34px;border:1px solid #dbe7dd;border-radius:8px;padding:6px 9px;background:#fff;color:#294432;font-size:11px;outline:none}.config-input:focus{border-color:#7db993}.config-input:disabled{background:#f1f5f1;color:#9fad9f}.config-note{grid-column:1/-1;margin:1px 0;color:#899b8d;font-size:10px;line-height:1.5}.field-label{display:block;margin-bottom:6px;color:#75877b;font-size:11px;font-weight:650}.picker{position:relative}.picker-trigger{width:100%;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #dbe7dd;border-radius:8px;padding:6px 9px;background:#fff;color:#2e4737;text-align:left;font-size:11px}.picker-trigger:hover{border-color:#a3cdb0}.picker-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.picker-chevron{height:7px;width:7px;flex:none;border-right:1.5px solid #719281;border-bottom:1.5px solid #719281;transform:rotate(45deg) translateY(-2px)}.picker-menu{position:absolute;z-index:15;top:calc(100% + 4px);left:0;right:0;max-height:210px;overflow:auto;border:1px solid #cadfce;border-radius:9px;background:#fff;padding:4px;box-shadow:0 12px 28px #163a2329}.picker-option{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;border-radius:6px;padding:8px;background:transparent;text-align:left;color:#2f493a;font-size:11px}.picker-option:hover,.picker-option[aria-selected=true]{background:#edf7ef;color:var(--green)}.picker-check{font-weight:800}.notice{margin-top:9px;padding:9px 11px;border:1px solid #d9e8dd;border-radius:9px;background:#f7fbf8;color:#4f6c57;font-size:12px;line-height:1.5}.notice.error{border-color:#ecd4ce;background:#fff6f3;color:#9c453c}
+    .inspector{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;border-left:1px solid #e0e9e2;background:#f9fbf9}.inspector-head{height:68px;min-height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid #e8eee9}.inspector-head h2{margin:0;font-size:13px;font-weight:750}.inspector-meta{font-size:10px;color:#8d9f91}.inspector-tabs{height:43px;display:flex;align-items:stretch;padding:0 17px;border-bottom:1px solid #e7eee8}.inspector-tab{border:0;border-bottom:2px solid transparent;background:transparent;color:#819287;padding:0 13px;font-size:11px;font-weight:650}.inspector-tab.active{border-bottom-color:var(--green);color:var(--green)}.sidebar{min-height:0;flex:1;overflow:auto;padding:17px 18px 27px}.sidebar .panel{padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid #e1eae2}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.panel-head h2{margin:0;font-size:12px;font-weight:750}.state-pill{display:inline-flex;align-items:center;gap:5px;color:#829289;font-size:10px;white-space:nowrap}.state-pill:before{content:"";width:6px;height:6px;border-radius:50%;background:#9aaca0}.state-pill.running:before,.state-pill.complete:before{background:var(--green)}.state-pill.failed:before{background:var(--danger)}.overview dl{display:grid;grid-template-columns:67px minmax(0,1fr);gap:11px 10px;margin:0;font-size:11px;line-height:1.5}.overview dt{color:#8a9b8e}.overview dd{min-width:0;margin:0;color:#43564a;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.progress-track{width:100%;height:5px;overflow:hidden;border-radius:99px;background:#e3ebe5;margin:2px 0 4px}.progress-fill{height:100%;width:0;background:var(--green);border-radius:99px;transition:width .4s}.quality-grid{display:grid;grid-template-columns:1fr;gap:7px}.metric{padding:9px 10px;border:1px solid #e2ebe3;border-radius:9px;background:#fff}.metric-head{display:flex;align-items:center;gap:8px}.metric-icon{width:22px;height:22px;display:grid;place-items:center;flex:none;color:var(--green);border-radius:6px;background:#eef7f0}.metric-icon svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.metric-name{font-size:11px;font-weight:700}.metric-name-cn{display:none}.metric-help{display:none}.metric-pending{display:block;margin-top:3px;margin-left:30px;color:#97a89c;font-size:10px}.metric-value{display:inline-block;margin:7px 5px 0 30px;color:var(--green);font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}.metric-unit{font-size:10px;color:#9aab9e}.metric-before{display:block;margin:3px 0 0 30px;color:#829489;font-size:10px}.metric-delta{display:inline-block;margin:5px 0 0 30px;color:#758a7a;font-size:10px}.metric-delta.good{color:var(--green)}.metric-delta.bad{color:var(--danger)}.metric-detail{margin:8px 0 0 30px;border-top:1px solid #ebf1ec;padding-top:6px}.metric-detail summary{cursor:pointer;color:#5a8265;font-size:10px}.metric-detail-body{padding-top:5px;color:#718378;font-size:10px;line-height:1.5}.evidence p{margin:0 0 10px;color:#849589;font-size:11px;line-height:1.6}.evidence-links{display:flex;flex-direction:column;gap:6px}.evidence-links a,.evidence-links span{display:flex;align-items:center;justify-content:space-between;border:1px solid #e0ebe2;border-radius:8px;background:#fff;padding:9px 10px;color:#4d7259;font-size:11px;font-weight:650}.evidence-links span{color:#a2afa6;background:#fcfdfc}.evidence-links a:after{content:"↗";font-size:12px}.analysis-context{font-size:11px;color:#829488;line-height:1.6}.context-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0}.context-row strong{color:#425a48;font-weight:700}.source-picker{margin-top:11px}.source-picker label{display:block;margin-bottom:5px;color:#829488;font-size:10px}.source-picker select{width:100%;height:32px;border:1px solid #dce8df;border-radius:7px;background:#fff;padding:0 8px;color:#3b5c46;font-size:11px}.context-actions{margin-top:10px}.context-actions button{width:100%;border:1px solid #cae1d0;border-radius:8px;background:#f0f8f1;padding:8px 10px;color:var(--green);font-size:11px;font-weight:700}.context-actions button:hover{background:#e6f2e8}
+    .details,.analysis-result{width:100%;border:1px solid #dce9df;border-radius:13px;background:#fff;padding:20px 22px;box-shadow:0 7px 22px #183d2608}.details .panel-head{margin-bottom:17px}.details .panel-head h2,.analysis-result h2{font-size:15px;letter-spacing:-.02em}.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px}.detail-block{min-width:0}.detail-block h3{font-size:12px;margin:0 0 9px}.detail-block p,.detail-block li{font-size:11px;color:#61746a;line-height:1.7}.detail-block ul{padding-left:18px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:7px 5px;border-bottom:1px solid #e9efe9}th{color:#7d9182;font-weight:700;white-space:nowrap}details{border-top:1px solid #edf2ee;padding-top:9px;margin-top:10px}summary{cursor:pointer;color:var(--green);font-size:11px;font-weight:700}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:8px;background:#f3f8f4;padding:11px;color:#516858;font-size:10px;line-height:1.6}.version-line{border-top:1px solid #e7efe8;padding-top:10px;margin:17px 0 0;color:#90a093;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+    #analysisResults{display:flex;flex-direction:column;gap:12px}.analysis-result{border-left:3px solid var(--green);background:linear-gradient(155deg,#fff 72%,#f7fbf8)}.result-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}.result-eyebrow{display:block;margin-bottom:4px;color:#809489;font-size:10px;font-weight:730;letter-spacing:.07em}.result-title{margin:0;font-size:16px;font-weight:780}.result-state{border:1px solid #cfe4d3;border-radius:6px;background:#edf7ef;padding:5px 8px;color:var(--green);font-size:10px;font-weight:720}.result-state.error{border-color:#edd8d2;background:#fff4f1;color:var(--danger)}.result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.result-cell{min-width:0;padding:11px;border:1px solid #e5ede6;border-radius:9px;background:#fff}.result-cell .label{display:block;margin-bottom:5px;color:#899b8d;font-size:10px}.result-cell .value{color:#244735;font-size:17px;font-weight:770;line-height:1.35;overflow-wrap:anywhere}.result-cell .sub{display:block;margin-top:5px;color:#7b8c80;font-size:10px;line-height:1.45;overflow-wrap:anywhere}.result-section{margin-top:16px;border-top:1px solid #e6eee7;padding-top:12px}.result-section h3{margin:0 0 9px;font-size:12px}.result-detail{margin-top:10px}.result-section p,.result-section li{margin:0 0 8px;color:#617569;font-size:11px;line-height:1.65}.result-section ul{margin:0;padding-left:17px}.result-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}.result-actions a{border:1px solid #cfe2d3;border-radius:7px;padding:7px 9px;background:#f7fbf8;font-size:11px;font-weight:700}.chart-shell{position:relative;min-height:210px;border:1px solid #e0ebe2;border-radius:9px;background:#fff;overflow:hidden}.chart-shell svg{display:block;width:100%;height:220px}.chart-caption{padding:7px 10px;border-top:1px solid #ebf0eb;color:#839486;font-size:10px}.chart-legend{display:flex;flex-wrap:wrap;gap:11px;padding:0 10px 9px;color:#728477;font-size:10px}.chart-legend span{display:inline-flex;align-items:center;gap:5px}.chart-legend i{display:inline-block;width:7px;height:7px;border-radius:50%}.result-warning{border-left:2px solid #c58b4b;background:#fffaf3;padding:9px 10px;color:#8e652c;font-size:11px;line-height:1.55}
+    @keyframes arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(300%)}}.step.active .step-dot:after{content:"";position:absolute;inset:0;border-radius:50%;background:#fff5;animation:sweep 1.6s ease-in-out infinite}
+    @media(max-width:1180px){.app-shell{grid-template-columns:206px minmax(500px,1fr) 275px}.conversation-body{padding-inline:34px}.composer-wrap{padding-inline:34px}.starter-list{grid-template-columns:1fr}.starter{min-height:0}.starter span:last-child{display:none}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
   </style>
 </head>
 <body>
-<div class="shell">
-  <header class="topbar">
-    <div class="identity">
-      <div class="brandmark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path fill="currentColor" d="M16 1 9 8l4 4 7-7-4-4ZM7 10 1 16l4 4 6-6-4-4Zm16-3L7 23l4 4L27 11l-4-4Zm6 6L13 29l4 2 14-14-2-4Z"/></svg></div>
-      <div><h1>MovieLens 数据治理 Agent</h1></div>
-      <p class="tagline">让数据更干净，让洞察更可靠</p>
+<div class="app-shell">
+  <aside class="rail" aria-label="会话导航">
+    <div class="brand"><span class="brandmark" aria-hidden="true">M</span><span><span class="brand-name">MovieLens Agent</span><span class="brand-sub">DATA & ANALYSIS</span></span></div>
+    <button id="newTask" class="new-task" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>新建对话</button>
+    <div class="rail-section">最近会话</div>
+    <nav id="sessionList" class="session-list" aria-label="最近会话"><p class="session-empty">还没有会话。发送第一条问题后会显示在这里。</p></nav>
+    <div class="rail-footer"><div class="model-line"><span id="modelDot" class="model-dot" aria-hidden="true"></span><span id="modelLabel">DeepSeek 状态待确认</span></div><div id="modelNote" class="rail-caption">实际查询将由 Agent 调用已登记工具。</div></div>
+  </aside>
+  <main class="chat-panel">
+    <header class="chat-header"><div class="header-title"><span class="header-kicker">MOVIELENS / WORKSPACE</span><h1 id="conversationTitle">新对话</h1></div><div class="header-meta"><span id="engineBadge" class="engine-pill">数据引擎待确认</span><span id="headerTask" class="task-short">尚无任务</span></div></header>
+    <div id="conversationBody" class="conversation-body" role="log" aria-live="polite">
+      <div id="emptyConversation" class="empty-conversation"><span class="empty-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 18 4-12 4 8 4-6 4 10M3 20h18"/></svg></span><h2>从一个问题开始分析</h2><p>让 Agent 组织清洗、分类、聚类与降维工具。每个结论都能回到实际任务、模型与数据版本。</p><div class="starter-label">可以这样开始</div><div class="starter-list"><button class="starter" type="button" data-prompt="请使用默认规则清洗 MovieLens 1M，评估清洗前后的五个质量维度，并说明异常处置。"><span class="starter-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M16 15l2 2 3-4"/></svg></span><strong>治理数据</strong><span>运行清洗并查看质量评估</span></button><button class="starter" type="button" data-prompt="请比较两种分类算法，预测 UserID 1 对 MovieID 1193 是否会给出不低于 4 分的评分，并说明依据。"><span class="starter-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5h16M7 15l4-4 3 2 5-6"/></svg></span><strong>预测高分</strong><span>对照模型的概率与评价</span></button><button class="starter" type="button" data-prompt="请比较两种聚类算法，分析 UserID 1 属于哪类用户，并解释该群体的观影偏好。"><span class="starter-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="15" cy="6" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="18" cy="17" r="2"/></svg></span><strong>理解用户群体</strong><span>查看聚类归属与群体摘要</span></button></div></div>
+      <div id="messages"></div>
+      <div id="timeline" class="timeline" hidden></div>
+      <div id="analysisActivity" class="task-activity" hidden></div>
+      <div id="analysisResults" hidden></div>
+      <section id="results" class="details" hidden aria-labelledby="resultsTitle"><div class="panel-head"><h2 id="resultsTitle">清洗结果与评估依据</h2></div><div class="details-grid"><div class="detail-block"><h3>数据量变化</h3><div id="counts" class="table-wrap"></div><h3 style="margin-top:22px">异常处置</h3><div id="issues"></div></div><div class="detail-block"><h3>结果解释</h3><div id="explanations"></div><details><summary>评分公式与局限</summary><div id="methods"></div><div id="limitations"></div></details><details><summary>清洗数据样例</summary><pre id="samples">正在读取…</pre></details></div></div><p id="versions" class="version-line"></p></section>
     </div>
-    <div class="topmeta"><span id="engineBadge" class="engine-pill">引擎未确认</span><span id="headerTask" class="task-short">尚无任务</span></div>
-  </header>
-
-  <main class="workspace">
-    <section class="panel conversation" aria-labelledby="conversationTitle">
-      <div class="panel-head"><h2 id="conversationTitle">对话与任务执行</h2><button id="newTask" class="quiet-button" type="button">新建任务</button></div>
-      <div id="conversationBody" class="conversation-body" role="log" aria-live="polite">
-        <div id="emptyConversation" class="empty-conversation"><div class="empty-icon" aria-hidden="true">✦</div><h3>从一句请求开始</h3><p>描述需要清洗和评估的数据。Agent 会调用实际工具，并把任务进度、评分和依据带回来。</p></div>
-        <div id="messages"></div>
-        <div id="timeline" class="timeline" hidden></div>
-      </div>
-      <div class="composer">
-        <label for="prompt" class="sr-only">输入请求或追问</label>
-        <textarea id="prompt" aria-label="输入请求或追问">请使用默认规则清洗 MovieLens 1M，评估清洗前后的五个质量维度，并说明异常处置。</textarea>
-        <div class="composer-footer">
-          <div class="field"><span class="field-label">数据版本</span><div class="picker" data-select="dataVersion"><select id="dataVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择数据版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="数据版本" hidden></div></div></div>
-          <div class="field"><span class="field-label">规则版本</span><div class="picker" data-select="ruleVersion"><select id="ruleVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择规则版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="规则版本" hidden></div></div></div>
-          <div class="field"><span class="field-label">评分配置</span><div class="picker" data-select="scoreConfig"><select id="scoreConfig" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择评分配置" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="评分配置" hidden></div></div></div>
-          <button id="send" class="send" type="button">发送</button>
-        </div>
-      </div>
-      <div id="notice" class="notice" hidden></div>
-    </section>
-
-    <aside class="sidebar">
-      <section class="panel overview" aria-labelledby="overviewTitle">
-        <div class="panel-head"><h2 id="overviewTitle">任务概览</h2><span id="statusPill" class="state-pill">未开始</span></div>
-        <dl><dt>任务 ID</dt><dd id="taskId">—</dd><dt>执行引擎</dt><dd id="taskEngine">—</dd><dt>当前阶段</dt><dd id="currentStage">等待请求</dd><dt>整体进度</dt><dd><div class="progress-track" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill" class="progress-fill"></div></div><span id="progressLabel">0 / 4</span></dd></dl>
-      </section>
-      <section class="panel quality" aria-labelledby="qualityTitle">
-        <div class="panel-head"><h2 id="qualityTitle">质量评估</h2><span id="qualityState" class="state-pill">等待结果</span></div>
-        <div id="scores" class="quality-grid"></div>
-      </section>
-      <section class="panel evidence" aria-labelledby="evidenceTitle">
-        <div class="panel-head"><h2 id="evidenceTitle">结果与证据</h2><span id="evidenceState" class="state-pill">未生成</span></div>
-        <p id="evidenceHint">任务完成后可查看评估报告、产物校验清单和异常记录。</p>
-        <div id="evidenceLinks" class="evidence-links"><span>评估报告</span><span>产物清单</span><span>异常记录</span></div>
-      </section>
-    </aside>
+    <div class="composer-wrap"><div class="composer"><label for="prompt" class="sr-only">向 Agent 提问</label><textarea id="prompt" aria-label="向 Agent 提问" placeholder="向 Agent 提问，或继续追问当前结果…"></textarea><div class="composer-bottom"><button id="configToggle" class="tool-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M8 5v4M15 10v4M11 15v4"/></svg>任务配置</button><span class="composer-tip">Enter 发送 · Shift + Enter 换行</span><span class="composer-spacer"></span><button id="send" class="send" type="button" aria-label="发送消息"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div></div><div id="configPanel" class="config-panel" hidden><div class="field"><span class="field-label">数据版本</span><div class="picker" data-select="dataVersion"><select id="dataVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择数据版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="数据版本" hidden></div></div></div><div class="field"><span class="field-label">清洗规则</span><div class="picker" data-select="ruleVersion"><select id="ruleVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择规则版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="清洗规则" hidden></div></div></div><div class="field"><span class="field-label">评分配置</span><div class="picker" data-select="scoreConfig"><select id="scoreConfig" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择评分配置" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="评分配置" hidden></div></div></div><div class="config-divider">分析配置 <span>留空使用已登记默认值</span></div><div class="field"><label class="field-label" for="sourceTaskInput">来源清洗任务 ID</label><input id="sourceTaskInput" class="config-input" type="text" maxlength="12" placeholder="可输入 12 位任务 ID"></div><div class="field"><label class="field-label" for="clusterCount">群体数</label><input id="clusterCount" class="config-input" type="number" min="2" max="10" placeholder="默认配置"></div><div class="field"><label class="field-label" for="targetDimensions">目标维数</label><input id="targetDimensions" class="config-input" type="number" min="2" max="10" placeholder="默认 2 维"></div><div class="field"><label class="field-label" for="informationThreshold">信息保留阈值</label><input id="informationThreshold" class="config-input" type="number" min="0.5" max="0.99" step="0.01" placeholder="与目标维数二选一"></div><div class="field"><label class="field-label" for="userIds">指定 UserID</label><input id="userIds" class="config-input" type="text" placeholder="如 1, 42, 126"></div><p class="config-note">指定维数与信息保留阈值二选一。UserID 只筛选已发布模型的查询结果或坐标，不会据此重新训练；调整群体数或维数将创建全量分析任务。二维图显示前两维。</p></div><div id="notice" class="notice" hidden></div></div>
   </main>
-
-  <section id="results" class="panel details" hidden aria-labelledby="resultsTitle">
-    <div class="panel-head"><h2 id="resultsTitle">清洗结果与评估依据</h2></div>
-    <div class="details-grid">
-      <div class="detail-block"><h3>数据量变化</h3><div id="counts" class="table-wrap"></div><h3 style="margin-top:22px">异常处置</h3><div id="issues"></div></div>
-      <div class="detail-block"><h3>结果解释</h3><div id="explanations"></div><details><summary>评分公式与局限</summary><div id="methods"></div><div id="limitations"></div></details><details><summary>清洗数据样例</summary><pre id="samples">正在读取…</pre></details></div>
-    </div>
-    <p id="versions" class="version-line"></p>
-  </section>
+  <aside class="inspector" aria-label="任务和产物"><div class="inspector-head"><h2>工作记录</h2><span class="inspector-meta">当前会话</span></div><div class="inspector-tabs"><button id="taskTab" class="inspector-tab active" type="button" aria-selected="true">任务</button><button id="filesTab" class="inspector-tab" type="button" aria-selected="false">产物</button></div><div class="sidebar"><div id="taskPane"><section class="panel overview" aria-labelledby="overviewTitle"><div class="panel-head"><h2 id="overviewTitle">执行状态</h2><span id="statusPill" class="state-pill">未开始</span></div><dl><dt>任务 ID</dt><dd id="taskId">—</dd><dt>执行引擎</dt><dd id="taskEngine">—</dd><dt>当前阶段</dt><dd id="currentStage">等待请求</dd><dt>整体进度</dt><dd><div class="progress-track" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill" class="progress-fill"></div></div><span id="progressLabel">0 / 4</span></dd></dl></section><section id="analysisContext" class="panel analysis-context"><div class="panel-head"><h2>分析任务</h2><span id="analysisState" class="state-pill">未开始</span></div><div class="context-row"><span>运行 ID</span><strong id="analysisTaskId">—</strong></div><div class="context-row"><span>阶段</span><strong id="analysisStage">等待请求</strong></div><p id="analysisHint">选择已完成的清洗任务，或在任务配置中输入任务 ID。</p><div class="source-picker"><label for="sourceTaskSelect">数据来源</label><select id="sourceTaskSelect"><option value="">读取已验证任务…</option></select></div><div class="context-actions"><button id="startAnalysis" type="button" disabled>启动迭代二分析</button></div></section><section class="panel quality" aria-labelledby="qualityTitle" hidden><div class="panel-head"><h2 id="qualityTitle">数据质量</h2><span id="qualityState" class="state-pill">等待结果</span></div><div id="scores" class="quality-grid"></div></section></div><div id="filesPane" hidden><section class="panel evidence" aria-labelledby="evidenceTitle"><div class="panel-head"><h2 id="evidenceTitle">结果与证据</h2><span id="evidenceState" class="state-pill">未生成</span></div><p id="evidenceHint">任务完成后在这里查看真实报告、数据样例与图表。</p><div id="evidenceLinks" class="evidence-links"><span>评估报告</span><span>产物清单</span><span>异常记录</span></div></section><section class="panel"><div class="panel-head"><h2>分析产物</h2><span id="analysisFilesState" class="state-pill">未生成</span></div><div id="analysisLinks" class="evidence-links"><span>分析报告</span><span>用户画像</span><span>模型评价</span></div></section></div></div></aside>
 </div>
 <script>
   let taskId = null, timer = null, lastStatus = null;
@@ -251,7 +60,7 @@
   const icon = (kind) => {
     const paths = {
       user: '<circle cx="12" cy="8" r="3.25"/><path d="M5.5 20c.4-3.4 2.8-5.1 6.5-5.1s6.1 1.7 6.5 5.1"/>',
-      assistant: '<path d="M12 2.5 13.9 9l6.6 3-6.6 3-1.9 6.5L10.1 15l-6.6-3 6.6-3L12 2.5Z"/><path d="m18.5 3 .5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5.5-1.5Z"/>',
+      assistant: '<path d="m4 18 4-12 4 8 4-6 4 10M3 20h18"/>', chat: '<path d="M5 5h14v11H9l-4 3V5Z"/>', activity: '<path d="M12 3v4m0 10v4M3 12h4m10 0h4M6 6l2 2m8 8 2 2M18 6l-2 2M8 16l-2 2"/>',
       Accurate: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="m9.7 12 1.5 1.5 3.1-3.2"/>',
       Complete: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10M13 16l2 2 3-3"/>',
       Unique: '<rect x="4" y="7" width="11" height="11" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3"/><path d="m8 12 2 2 3-3"/>',
@@ -268,24 +77,261 @@
   ];
   const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const now = () => new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  const sessionStoreKey = 'movielensAgentSessionsV2';
+  let sessions = [], activeSessionId = null, analysisTaskId = null, analysisTimer = null, lastAnalysisStatus = null, preferredSourceTaskId = null;
+  try { const saved = JSON.parse(localStorage.getItem(sessionStoreKey) || '[]'); if (Array.isArray(saved)) sessions = saved.filter(x => x && typeof x.id === 'string').slice(0, 30); } catch (_) {}
+  function currentSession() { return sessions.find(x => x.id === activeSessionId); }
+  function saveSessions() { try { localStorage.setItem(sessionStoreKey, JSON.stringify(sessions.slice(0, 30))); } catch (_) {} }
+  function sessionTitle(message) { return message.replace(/\s+/g, ' ').trim().slice(0, 34) || '新对话'; }
+  function renderSessionList() {
+    $('sessionList').innerHTML = sessions.length ? sessions.map(item => `<button type="button" class="session-item ${item.id === activeSessionId ? 'active' : ''}" data-session="${esc(item.id)}" title="${esc(item.title)}"><span class="rail-icon">${icon('chat')}</span><span class="session-title">${esc(item.title)}</span></button>`).join('') : '<p class="session-empty">还没有会话。发送第一条问题后会显示在这里。</p>';
+    $('conversationTitle').textContent = currentSession()?.title || '新对话';
+  }
+  function createSession(message) {
+    const entry = {id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()), title: sessionTitle(message), updated: Date.now(), taskId: null, analysisTaskId: null, messages: [], lastResult: null};
+    sessions.unshift(entry); activeSessionId = entry.id; saveSessions(); renderSessionList(); return entry;
+  }
+  function touchSession() { const session = currentSession(); if (!session) return; session.taskId = taskId; session.analysisTaskId = analysisTaskId; session.updated = Date.now(); sessions.sort((a,b) => b.updated-a.updated); saveSessions(); renderSessionList(); }
+  function restoreSession(id) {
+    const session = sessions.find(x => x.id === id); if (!session) return;
+    resetView(false); activeSessionId = id; taskId = session.taskId || null; analysisTaskId = session.analysisTaskId || null;
+    for (const message of session.messages || []) addMessage(message.role, message.content, false, message.time);
+    if (!analysisTaskId && Array.isArray(session.lastResult)) session.lastResult.forEach(item=>renderAgentResult(item,true));
+    else if (!analysisTaskId && session.lastResult) renderAgentResult(session.lastResult);
+    renderSessionList(); if (taskId && [...$('sourceTaskSelect').options].some(option=>option.value===taskId)) $('sourceTaskSelect').value=taskId; updateStartAnalysisAvailability(); if (taskId) poll(); if (analysisTaskId) pollAnalysis();
+  }
+  function renderModelStatus(agent) {
+    const configured = Boolean(agent?.configured); const model = agent?.model ? String(agent.model) : 'DeepSeek';
+    $('modelDot').className = 'model-dot ' + (configured ? 'ready' : 'unavailable');
+    $('modelLabel').textContent = configured ? 'DeepSeek · ' + model : 'DeepSeek 未配置';
+    $('modelNote').textContent = configured ? '会话记录仅保存在此浏览器。' : '设置 DEEPSEEK_API_KEY 后可使用模型对话。';
+  }
+  function selectedSourceTaskId() {
+    const typed=$('sourceTaskInput').value.trim();
+    return typed || $('sourceTaskSelect').value || taskId || '';
+  }
+  function readAnalysisConfig() {
+    const config={};
+    const cluster=$('clusterCount').value.trim(), dimensions=$('targetDimensions').value.trim(), threshold=$('informationThreshold').value.trim();
+    if (cluster) { const value=Number(cluster); if (!Number.isInteger(value)||value<2||value>10) throw Error('群体数须为 2 到 10 的整数。'); config.n_clusters=value; }
+    if (dimensions && threshold) throw Error('目标维数和信息保留阈值只能选择一个。');
+    if (dimensions) { const value=Number(dimensions); if (!Number.isInteger(value)||value<2||value>10) throw Error('目标维数须为 2 到 10 的整数。'); config.target_dimensions=value; }
+    if (threshold) { const value=Number(threshold); if (!Number.isFinite(value)||value<.5||value>.99) throw Error('重建 R² 阈值须在 0.50 到 0.99 之间。'); config.information_threshold=value; }
+    return config;
+  }
+  function readUserIds() {
+    const raw=$('userIds').value.trim(); if (!raw) return [];
+    const ids=[...new Set(raw.split(/[\s,，、]+/).filter(Boolean).map(value=>Number(value)))];
+    if (!ids.length || ids.length>20 || ids.some(id=>!Number.isInteger(id)||id<1)) throw Error('UserID 请填 1–20 个正整数，用逗号分隔。');
+    return ids;
+  }
+  function updateStartAnalysisAvailability() {
+    const source=selectedSourceTaskId();
+    $('startAnalysis').disabled=!/^[0-9a-f]{12}$/i.test(source);
+  }
+  async function loadSourceTasks(preferred='') {
+    try {
+      const data=await getJson('/api/source-tasks');
+      const tasks=Array.isArray(data.source_tasks)?data.source_tasks.filter(item=>/^[0-9a-f]{12}$/i.test(item.task_id || '')):[];
+      $('sourceTaskSelect').innerHTML=tasks.length ? '<option value="">选择已验证清洗任务</option>'+tasks.map(item=>`<option value="${esc(item.task_id)}">${esc(item.task_id)} · ${esc(item.clean_data_version || '版本未记录')}</option>`).join('') : '<option value="">暂无已验证清洗任务</option>';
+      const wanted=preferredSourceTaskId || preferred || taskId || data.latest_source_task_id || tasks[0]?.task_id;
+      if (tasks.some(item=>item.task_id===wanted)) $('sourceTaskSelect').value=wanted;
+      updateStartAnalysisAvailability();
+    } catch (_) { $('sourceTaskSelect').innerHTML='<option value="">请在任务配置中输入任务 ID</option>'; updateStartAnalysisAvailability(); }
+  }
+  function renderToolEvents(events) {
+    if (!Array.isArray(events) || !events.length) return;
+    const lines = events.slice(-5).map(event => {
+      if (typeof event === 'string') return event;
+      if (!event || typeof event !== 'object') return '';
+      return [event.tool || event.name || event.stage || '工具调用', event.status || event.message || ''].filter(Boolean).join(' · ');
+    }).filter(Boolean);
+    if (!lines.length) return;
+    $('analysisActivity').hidden = false;
+    $('analysisActivity').innerHTML = '<div class="activity-head"><span class="activity-icon">'+icon('activity')+'</span>Agent 工具记录</div>' + lines.map(line => '<div class="activity-detail">'+esc(line)+'</div>').join('');
+  }
+  function asText(value) { if (value === null || value === undefined || value === '') return '未记录'; if (typeof value === 'object') return JSON.stringify(value); return String(value); }
+  function formatMetric(value) { if (typeof value !== 'number' || !Number.isFinite(value)) return asText(value); return Number.isInteger(value) ? String(value) : value.toFixed(3); }
+  function resultField(label,value,sub='') { return `<div class="result-cell"><span class="label">${esc(label)}</span><strong class="value">${esc(asText(value))}</strong>${sub ? `<span class="sub">${esc(asText(sub))}</span>` : ''}</div>`; }
+  function metricLines(metrics) { if (!metrics || typeof metrics !== 'object') return ''; return Object.entries(metrics).map(([key,value]) => `<div class="context-row"><span>${esc(key.replaceAll('_',' '))}</span><strong>${esc(formatMetric(value))}</strong></div>`).join(''); }
+  function safeResultItems(result) { return Array.isArray(result?.results) ? result.results.filter(x => x && typeof x === 'object') : []; }
+  function renderScatter(rawPoints, caption) {
+    const points = Array.isArray(rawPoints) ? rawPoints : Array.isArray(rawPoints?.points) ? rawPoints.points : [];
+    const valid = points.map((item,index) => {
+      const pair = Array.isArray(item) ? item : [item?.x ?? item?.component_1 ?? item?.dim1 ?? item?.coordinates?.[0], item?.y ?? item?.component_2 ?? item?.dim2 ?? item?.coordinates?.[1]];
+      return {x:Number(pair[0]),y:Number(pair[1]),group:item?.cluster ?? item?.clusters?.kmeans ?? item?.group ?? item?.label ?? 0,id:item?.user_id ?? item?.UserID ?? index};
+    }).filter(item => Number.isFinite(item.x) && Number.isFinite(item.y));
+    const normalized=valid.length<=700 ? valid : Array.from({length:700},(_,i)=>valid[Math.floor(i*(valid.length-1)/699)]);
+    if (!normalized.length) return '<p class="result-warning">当前报告没有可展示的二维坐标。</p>';
+    const xs=normalized.map(p=>p.x),ys=normalized.map(p=>p.y),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const px=x=>24+(x-minX)/(maxX-minX||1)*612,py=y=>190-(y-minY)/(maxY-minY||1)*164;
+    const palette=['#267653','#688f71','#ad8b57','#7397a5','#937ea0','#c77866','#8c9c66','#6b7d8c'];
+    const groups=[...new Set(normalized.map(p=>String(p.group)))];
+    const circles=normalized.map(p=>`<circle cx="${px(p.x).toFixed(1)}" cy="${py(p.y).toFixed(1)}" r="2.2" fill="${palette[groups.indexOf(String(p.group))%palette.length]}" fill-opacity=".72"><title>${esc('UserID '+p.id+' · 群体 '+p.group)}</title></circle>`).join('');
+    const legend=groups.map((group,i)=>`<span><i style="background:${palette[i%palette.length]}"></i>群体 ${esc(group)}</span>`).join('');
+    return `<div class="chart-shell"><svg viewBox="0 0 660 210" role="img" aria-label="${esc(caption)}二维坐标散点图"><path d="M24 26V190H636" fill="none" stroke="#cbd8ce" stroke-width="1"/>${circles}</svg><div class="chart-caption">${esc(caption)} · 显示 ${normalized.length} / ${valid.length} 个真实坐标点${valid.length>normalized.length?'（等距抽样）':''}</div><div class="chart-legend">${legend}</div></div>`;
+  }
+  function renderAgentResult(result, append=false) {
+    if (!result || typeof result !== 'object') return;
+    const state=result.status || 'unavailable', kind=result.task || result.type || 'analysis';
+    const title={classification:'高分预测',clustering:'用户群体划分',reduction:'偏好降维',cleaning:'数据治理'}[kind] || '工具结果';
+    let items=safeResultItems(result); let body='';
+    if (kind==='clustering' && items.some(item=>item.result)) items=items.flatMap(item=>['completed','complete'].includes(item.result?.status) ? (item.result.results || []).map(entry=>({...entry,user_id:item.user_id})) : [{user_id:item.user_id,status:item.result?.status || 'unavailable',reason:item.result?.reason || '该用户结果不可用'}]);
+    if (state!=='completed' && state!=='complete') body=`<div class="result-warning">${esc(result.reason || result.message || '结果尚不可用。')}</div>`;
+    else if (!items.length) body='<div class="result-warning">工具已完成，但没有登记可展示的分析条目。</div>';
+    else body=items.map(item=>{
+      if (item.reason && item.status && item.status!=='completed') return `<section class="result-section"><h3>UserID ${esc(asText(item.user_id))}</h3><div class="result-warning">${esc(asText(item.reason))}</div></section>`;
+      const algorithm=item.algorithm || item.algorithm_name || item.model || '未记录算法';
+      let cells='', content='', chart='';
+      if (kind==='classification') {
+        const label=item.predicted_high_rating===true ? '预测 ≥ 4 分' : item.predicted_high_rating===false ? '预测 < 4 分' : '未记录';
+        const probability=typeof item.positive_probability==='number' ? (item.positive_probability*100).toFixed(1)+'%' : '未记录';
+        cells=resultField('预测类别',label,'这是模型预测，不是实际评分')+resultField('高分概率',probability,'阈值 '+formatMetric(item.decision_threshold));
+        content=`<div class="context-row"><span>模型版本</span><strong>${esc(asText(item.model_version))}</strong></div><div class="context-row"><span>用户 / 电影</span><strong>${esc(asText(result.user_id))} / ${esc(asText(result.movie_id))}</strong></div>`;
+        if (item.test_metrics) content+=`<details><summary>测试集评价指标</summary>${metricLines(item.test_metrics)}</details>`;
+      } else if (kind==='clustering') {
+        const allSegments=Array.isArray(item.segments) ? item.segments : null;
+        if (allSegments) {
+          cells=resultField('已划分群体',allSegments.length+' 组','训练期画像的算法划分')+resultField('模型版本',item.model_version ?? '未记录');
+          content+=`<div class="table-wrap"><table><tr><th>群体</th><th>人数</th><th>主要类型</th></tr>${allSegments.map(segment=>`<tr><td>${esc(asText(segment.cluster_id))}</td><td>${esc(asText(segment.size))}</td><td>${esc((segment.top_genres || []).join('、'))}</td></tr>`).join('')}</table></div>`;
+          content+=`<details><summary>群体说明与代表电影</summary>${allSegments.map(segment=>`<p><strong>群体 ${esc(asText(segment.cluster_id))}</strong> · ${esc(asText(segment.summary))}<br>${esc((segment.representative_movies || []).slice(0,4).map(movie=>movie.title || movie.movie_id).join('、'))}</p>`).join('')}</details>`;
+        } else {
+          const segment=item.segment && typeof item.segment==='object' ? item.segment : {};
+          cells=resultField('所属群体',item.is_noise ? '噪声点' : item.cluster_id ?? '未记录','训练期用户偏好划分')+resultField('群体规模',segment.size ?? '未记录','模型版本 '+asText(item.model_version));
+          if (segment.summary) content+=`<p>${esc(asText(segment.summary))}</p>`;
+          if (Array.isArray(segment.top_genres) && segment.top_genres.length) content+=`<p><strong>偏好类型：</strong>${esc(segment.top_genres.join('、'))}</p>`;
+          if (Array.isArray(segment.representative_movies) && segment.representative_movies.length) content+=`<p><strong>代表电影：</strong>${esc(segment.representative_movies.slice(0,4).map(movie=>movie.title || movie.movie_id).join('、'))}</p>`;
+        }
+        if (item.metrics) content+=`<details><summary>聚类评价</summary>${metricLines(item.metrics)}</details>`;
+      } else if (kind==='reduction') {
+        const info=item.information || {};
+        const ratio=info.reconstruction_r2;
+        cells=resultField('维数',asText(item.original_dimensions)+' → '+asText(item.actual_dimensions),'二维图只显示前两坐标')+resultField('重建 R²',ratio==null ? '未记录' : (ratio*100).toFixed(1)+'%','两种算法统一口径');
+        content=`<div class="context-row"><span>训练耗时</span><strong>${esc(formatMetric(item.fit_seconds))} s</strong></div><div class="context-row"><span>坐标矩阵</span><strong>${esc(asText(item.coordinate_matrix_bytes))} bytes</strong></div>`;
+        if (info.explained_variance_ratio_sum!=null) content+=`<p>PCA 解释方差比例 ${esc((info.explained_variance_ratio_sum*100).toFixed(1))}%（补充指标）。</p>`;
+        if (info.note) content+=`<p>${esc(info.note)}</p>`;
+        if (item.clustering_comparison) content+=`<details><summary>压缩前后聚类评价</summary>${Object.entries(item.clustering_comparison).map(([name,comparison])=>`<p><strong>${esc(name)}</strong> · 原空间轮廓系数 ${esc(formatMetric(comparison.original_space?.silhouette))} → 降维空间 ${esc(formatMetric(comparison.reduced_space?.silhouette))}</p>`).join('')}</details>`;
+        chart=renderScatter(item.coordinates,algorithm);
+      }
+      if (item.params) content+=`<details><summary>实际参数</summary>${metricLines(item.params)}</details>`;
+      return `<section class="result-section"><h3>${esc(asText(algorithm))}${item.user_id ? ' · UserID '+esc(asText(item.user_id)) : ''}</h3>${cells ? `<div class="result-grid">${cells}</div>` : ''}<div class="result-detail">${content}</div>${chart}</section>`;
+    }).join('');
+    $('emptyConversation').hidden=true; $('analysisResults').hidden=false;
+    const markup=`<article class="analysis-result"><div class="result-heading"><div><span class="result-eyebrow">已登记工具输出</span><h2 class="result-title">${esc(title)}</h2></div><span class="result-state ${state==='completed'||state==='complete'?'':'error'}">${esc(state)}</span></div>${body}</article>`;
+    if (append) $('analysisResults').insertAdjacentHTML('beforeend',markup); else $('analysisResults').innerHTML=markup;
+    $('analysisResults').scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  function renderAnalysisStatus(state) {
+    const status=state.status || 'queued'; const stage=state.stage || '等待运行';
+    $('analysisTaskId').textContent=state.analysis_task_id || analysisTaskId || '—';
+    $('analysisState').textContent=({queued:'排队中',running:'运行中',complete:'已完成',failed:'失败'})[status] || status;
+    $('analysisState').className='state-pill '+status;
+    $('analysisStage').textContent=status==='complete' ? '产物已发布' : status==='failed' ? '执行失败' : stage;
+    $('analysisHint').textContent=status==='failed' ? (state.error || state.progress || '分析任务失败') : state.progress || '正在读取任务进展。';
+    if (status==='running'||status==='queued') {
+      $('analysisActivity').hidden=false;
+      $('analysisActivity').innerHTML='<div class="activity-head"><span class="activity-icon">'+icon('activity')+'</span>分析工具正在运行</div><div class="activity-detail">'+esc(state.progress || stage)+'</div>';
+    } else if (status==='failed') {
+      $('analysisActivity').hidden=false;
+      $('analysisActivity').innerHTML='<div class="activity-head">分析任务失败</div><div class="activity-detail">'+esc(state.error || state.progress || '请查看任务状态')+'</div>';
+    } else if (status==='complete') $('analysisActivity').hidden=true;
+    lastAnalysisStatus=status;
+  }
+  async function pollAnalysis() {
+    if (!analysisTaskId) return;
+    const requested=analysisTaskId;
+    try {
+      const state=await getJson('/api/analysis/tasks/'+encodeURIComponent(requested)); if (requested!==analysisTaskId) return;
+      renderAnalysisStatus(state);
+      if (state.status==='queued'||state.status==='running') { if (!analysisTimer) analysisTimer=setInterval(pollAnalysis,2500); return; }
+      if (analysisTimer) clearInterval(analysisTimer); analysisTimer=null;
+      if (state.status==='complete') { const report=await getJson('/api/analysis/tasks/'+encodeURIComponent(requested)+'/report'); if (requested===analysisTaskId) await renderAnalysisReport(report); }
+    } catch(e) { if (requested!==analysisTaskId) return; if (analysisTimer) clearInterval(analysisTimer); analysisTimer=null; $('analysisHint').textContent='状态读取失败：'+e.message; }
+  }
+  async function renderAnalysisReport(report) {
+    if (!report || typeof report!=='object' || !analysisTaskId) return;
+    const source=report.source || {}, split=report.split || {};
+    if (/^[0-9a-f]{12}$/i.test(source.task_id || '')) preferredSourceTaskId=source.task_id;
+    const id=analysisTaskId;
+    const sections=[];
+    const classification=report.classification?.algorithms || {};
+    if (Object.keys(classification).length) {
+      const rows=Object.entries(classification).map(([name,item])=>{
+        const validation=item?.validation || {}, test=item?.test || {};
+        return `<tr><td>${esc(name.replaceAll('_',' '))}</td><td>${esc(formatMetric(validation.f1))}</td><td>${esc(formatMetric(test.f1))}</td><td>${esc(formatMetric(test.pr_auc))}</td></tr>`;
+      }).join('');
+      sections.push(`<section class="result-section"><h3>分类 · 双算法对照</h3><div class="table-wrap"><table><tr><th>算法</th><th>验证 F1</th><th>测试 F1</th><th>测试 PR-AUC</th></tr>${rows}</table></div></section>`);
+    }
+    const clustering=report.clustering?.algorithms || {};
+    if (Object.keys(clustering).length) {
+      const rows=Object.entries(clustering).map(([name,item])=>{
+        const metrics=item?.metrics || {};
+        return `<tr><td>${esc(name.replaceAll('_',' '))}</td><td>${esc(formatMetric(metrics.silhouette))}</td><td>${esc(formatMetric(metrics.davies_bouldin))}</td><td>${esc(asText(Array.isArray(item?.segments) ? item.segments.length : Object.keys(item?.segments || {}).length))}</td></tr>`;
+      }).join('');
+      sections.push(`<section class="result-section"><h3>聚类 · 群体质量</h3><div class="table-wrap"><table><tr><th>算法</th><th>轮廓系数</th><th>DB 指数</th><th>群体数</th></tr>${rows}</table></div></section>`);
+    }
+    const reduction=report.reduction?.algorithms || {};
+    if (Object.keys(reduction).length) {
+      const rows=Object.entries(reduction).map(([name,item])=>{
+        const information=item?.information || {};
+        const retention=information.reconstruction_r2;
+        return `<tr><td>${esc(name.toUpperCase())}</td><td>${esc(asText(item?.original_dimensions))} → ${esc(asText(item?.actual_dimensions))}</td><td>${esc(formatMetric(retention))}</td><td>${esc(formatMetric(item?.fit_seconds))} s</td></tr>`;
+      }).join('');
+      sections.push(`<section class="result-section"><h3>降维 · 信息与开销</h3><div class="table-wrap"><table><tr><th>算法</th><th>维数</th><th>重建 R²</th><th>训练耗时</th></tr>${rows}</table></div><p>本表统一展示重建 R²；PCA 解释方差及算法适用边界见完整报告。</p></section>`);
+    }
+    let charts='';
+    try {
+      const data=await getJson('/api/analysis/tasks/'+encodeURIComponent(id)+'/artifacts/coordinates.json');
+      if (id!==analysisTaskId) return;
+      const users=Array.isArray(data.users)?data.users:[];
+      charts=['pca','nmf'].filter(name=>users.some(user=>Array.isArray(user[name]))).map(name=>{
+        const points=users.filter(user=>Array.isArray(user[name])).map(user=>({x:user[name][0],y:user[name][1],user_id:user.user_id,cluster:user.clusters?.kmeans ?? 0}));
+        return `<section class="result-section"><h3>${esc(name.toUpperCase())} · 用户偏好坐标</h3>${renderScatter(points,name.toUpperCase())}</section>`;
+      }).join('');
+    } catch (_) {}
+    const splitText=['train','validation','test'].map(name=>({train:'训练',validation:'验证',test:'测试'}[name]+' '+asText(split[name]?.rows))).join(' / ');
+    const version=source.clean_data_version || source.data_version || '未记录';
+    $('emptyConversation').hidden=true; $('timeline').hidden=true; $('results').hidden=true; $('analysisResults').hidden=false;
+    $('analysisResults').innerHTML=`<article class="analysis-result"><div class="result-heading"><div><span class="result-eyebrow">分析任务报告</span><h2 class="result-title">分类、聚类与降维</h2></div><span class="result-state">实际运行</span></div><div class="result-grid">${resultField('输入数据版本',version,'来源清洗任务 '+asText(source.task_id))}${resultField('数据切分',splitText)}</div>${sections.join('') || '<div class="result-warning">报告还没有登记可展示的算法结果。</div>'}${charts}<details><summary>切分口径与完整配置</summary><pre>${esc(JSON.stringify(split,null,2))}</pre></details><div class="result-actions"><a href="/api/analysis/tasks/${encodeURIComponent(id)}/report" target="_blank" rel="noopener">查看完整分析报告</a></div></article>`;
+    if (!taskId && /^[0-9a-f]{12}$/i.test(source.task_id || '')) { taskId=source.task_id; localStorage.lab2TaskId=taskId; touchSession(); poll(); }
+    if ([...$('sourceTaskSelect').options].some(option=>option.value===source.task_id)) $('sourceTaskSelect').value=source.task_id;
+    else if (preferredSourceTaskId) loadSourceTasks(preferredSourceTaskId);
+    updateStartAnalysisAvailability();
+    const savedResults=currentSession()?.lastResult; if (Array.isArray(savedResults)) savedResults.forEach(item=>renderAgentResult(item,true)); else if (savedResults) renderAgentResult(savedResults,true);
+    $('analysisFilesState').textContent='已生成'; $('analysisFilesState').className='state-pill complete';
+    try {
+      const manifest=await getJson('/api/analysis/tasks/'+encodeURIComponent(id)+'/artifacts');
+      if (id!==analysisTaskId) return;
+      const allowed={'report.json':'分析报告','profiles.json':'用户画像','clusters.json':'用户群体','coordinates.json':'二维坐标','manifest.json':'产物清单'};
+      const listed=new Set((manifest.artifacts || []).map(entry=>entry.name));
+      listed.add('manifest.json');
+      $('analysisLinks').innerHTML=Object.entries(allowed).filter(([name])=>listed.has(name)).map(([name,label])=>`<a href="/api/analysis/tasks/${encodeURIComponent(id)}/artifacts/${name}" target="_blank" rel="noopener">${label}</a>`).join('') || '<span>产物清单未登记文件</span>';
+    } catch (_) { $('analysisLinks').innerHTML=`<a href="/api/analysis/tasks/${encodeURIComponent(id)}/report" target="_blank" rel="noopener">分析报告</a>`; }
+  }
   async function getJson(url, options) { const r = await fetch(url, options); const data = await r.json(); if (!r.ok) throw Error(data.error || r.statusText); return data; }
   function notice(message, error=false) { $('notice').textContent = message; $('notice').className = 'notice' + (error ? ' error' : ''); $('notice').hidden = !message; }
-  function addMessage(role, content) {
+  function addMessage(role, content, persist=true, timestamp=now()) {
     $('emptyConversation').hidden = true;
-    const box = document.createElement('div'); box.className = 'message ' + role;
-    box.innerHTML = `<div class="avatar" aria-hidden="true">${icon(role)}</div><div><div class="bubble">${esc(content)}</div><time>${now()}</time></div>`;
-    $('messages').append(box); box.scrollIntoView({block:'nearest', behavior:'smooth'});
+    const box=document.createElement('div'); box.className='message '+role;
+    box.innerHTML=`<div class="avatar" aria-hidden="true">${icon(role)}</div><div class="message-content"><div class="bubble">${esc(content)}</div><time>${esc(timestamp)}</time></div>`;
+    $('messages').append(box); box.scrollIntoView({block:'nearest',behavior:'smooth'});
+    if (persist) { const session=currentSession(); if (session) { session.messages.push({role,content:String(content),time:timestamp}); touchSession(); } }
   }
-  function resetView() {
-    taskId = null; lastStatus = null; if (timer) clearInterval(timer); timer = null;
-    localStorage.removeItem('lab2TaskId'); $('messages').replaceChildren(); $('emptyConversation').hidden = false;
-    $('timeline').hidden = true; $('results').hidden = true; $('taskId').textContent = '—'; $('headerTask').textContent = '尚无任务';
-    $('taskEngine').textContent = '—'; $('currentStage').textContent = '等待请求'; $('statusPill').textContent = '未开始'; $('statusPill').className = 'state-pill';
-    $('engineBadge').textContent = '引擎未确认'; $('engineBadge').className = 'engine-pill';
-    $('progressFill').style.width = '0%'; $('progressLabel').textContent = '0 / 4'; document.querySelector('.progress-track').setAttribute('aria-valuenow','0');
-    $('qualityState').textContent = '等待结果'; $('qualityState').className = 'state-pill'; $('evidenceState').textContent = '未生成'; $('evidenceState').className = 'state-pill';
-    $('evidenceLinks').innerHTML = '<span>评估报告</span><span>产物清单</span><span>异常记录</span>'; $('evidenceHint').textContent = '任务完成后可查看评估报告、产物校验清单和异常记录。';
-    renderPendingScores(); notice('');
+  function resetView(clearActive=true) {
+    taskId=null; analysisTaskId=null; lastStatus=null; lastAnalysisStatus=null; preferredSourceTaskId=null;
+    if (timer) clearInterval(timer); timer=null; if (analysisTimer) clearInterval(analysisTimer); analysisTimer=null;
+    if (clearActive) activeSessionId=null; $('sourceTaskInput').value='';
+    localStorage.removeItem('lab2TaskId'); $('messages').replaceChildren(); $('emptyConversation').hidden=false;
+    $('timeline').hidden=true; $('analysisActivity').hidden=true; $('analysisResults').hidden=true; $('analysisResults').replaceChildren(); $('results').hidden=true;
+    $('taskId').textContent='—'; $('headerTask').textContent='尚无任务'; $('taskEngine').textContent='—'; $('currentStage').textContent='等待请求';
+    $('statusPill').textContent='未开始'; $('statusPill').className='state-pill'; $('engineBadge').textContent='数据引擎待确认';
+    $('progressFill').style.width='0%'; $('progressLabel').textContent='0 / 4'; document.querySelector('.progress-track').setAttribute('aria-valuenow','0');
+    $('analysisTaskId').textContent='—'; $('analysisStage').textContent='等待请求'; $('analysisState').textContent='未开始'; $('analysisState').className='state-pill';
+    $('analysisHint').textContent='从已完成的清洗任务启动分析后，这里显示模型训练状态。'; $('startAnalysis').disabled=true;
+    $('analysisFilesState').textContent='未生成'; $('analysisFilesState').className='state-pill'; $('analysisLinks').innerHTML='<span>分析报告</span><span>用户画像</span><span>模型评价</span>';
+    $('qualityState').textContent='等待结果'; $('qualityState').className='state-pill'; $('evidenceState').textContent='未生成'; $('evidenceState').className='state-pill';
+    $('evidenceLinks').innerHTML='<span>评估报告</span><span>产物清单</span><span>异常记录</span>'; $('evidenceHint').textContent='任务完成后在这里查看真实报告、数据样例与图表。';
+    renderPendingScores(); document.querySelector('.quality').hidden=true; notice(''); renderSessionList(); updateStartAnalysisAvailability();
   }
   function renderPendingScores() { $('scores').innerHTML = names.map(name => `<div class="metric"><div class="metric-head"><span class="metric-icon">${icon(name)}</span><div><span class="metric-name">${scoreMeta[name].label}</span><span class="metric-name-cn">${name}</span></div></div><p class="metric-help">${scoreMeta[name].help}</p><span class="metric-pending">等待本次任务评分</span></div>`).join(''); }
   function stepIndex(stage, status) {
@@ -307,42 +353,55 @@
     }).join('');
   }
   function renderStatus(state) {
-    const status = state.status || 'queued'; const index = stepIndex(state.stage, status);
-    $('taskId').textContent = state.task_id || taskId; $('headerTask').textContent = '任务 ID · ' + (state.task_id || taskId);
-    $('taskEngine').textContent = state.engine || '—'; $('engineBadge').textContent = state.engine || '引擎未确认'; $('engineBadge').className = 'engine-pill' + (state.engine ? ' active' : '');
-    $('statusPill').textContent = ({queued:'等待中',running:'执行中',complete:'已完成',failed:'失败'})[status] || status;
-    $('statusPill').className = 'state-pill ' + status;
-    $('currentStage').textContent = status === 'failed' ? (state.failed_stage || state.stage || '未知') + ' · ' + (state.error || '执行失败') : status === 'complete' ? '任务完成' : state.progress || '等待运行';
-    $('progressFill').style.width = (index / 4 * 100) + '%'; $('progressLabel').textContent = index + ' / 4';
-    document.querySelector('.progress-track').setAttribute('aria-valuenow', String(index * 25));
-    renderTimeline(state);
-    if (status === 'failed' && lastStatus !== 'failed') { addMessage('assistant', '任务执行失败：' + (state.error || '请查看任务状态。')); notice('失败阶段：' + (state.failed_stage || state.stage || '未知'), true); }
-    lastStatus = status;
+    const status=state.status || 'queued', index=stepIndex(state.stage,status);
+    $('taskId').textContent=state.task_id || taskId; $('headerTask').textContent='清洗任务 · '+(state.task_id || taskId);
+    $('taskEngine').textContent=state.engine || '—'; $('engineBadge').textContent=state.engine || '数据引擎待确认';
+    $('statusPill').textContent=({queued:'等待中',running:'执行中',complete:'已完成',failed:'失败'})[status] || status; $('statusPill').className='state-pill '+status;
+    $('currentStage').textContent=status==='failed' ? (state.failed_stage || state.stage || '未知')+' · '+(state.error || '执行失败') : status==='complete' ? '任务完成' : state.progress || '等待运行';
+    $('progressFill').style.width=(index/4*100)+'%'; $('progressLabel').textContent=index+' / 4'; document.querySelector('.progress-track').setAttribute('aria-valuenow',String(index*25));
+    updateStartAnalysisAvailability(); if (analysisTaskId && lastAnalysisStatus==='complete') $('timeline').hidden=true; else renderTimeline(state);
+    if (status==='failed' && lastStatus!=='failed') { addMessage('assistant','清洗任务失败：'+(state.error || '请查看任务状态。')); notice('失败阶段：'+(state.failed_stage || state.stage || '未知'),true); }
+    lastStatus=status;
   }
   async function send() {
-    const message = $('prompt').value.trim(); if (!message) { notice('请输入清洗、评估或追问内容。', true); $('prompt').focus(); return; }
-    $('send').disabled = true; $('newTask').disabled = true; notice('');
+    const message=$('prompt').value.trim(); if (!message) { notice('请输入一个问题。',true); $('prompt').focus(); return; }
+    let analysisConfig,userIds; try { analysisConfig=readAnalysisConfig(); userIds=readUserIds(); } catch(e) {notice(e.message,true);return;}
+    const sourceTaskId=selectedSourceTaskId();
+    let session=currentSession(); if (!session) session=createSession(message);
+    const history=(session.messages || []).slice(-20).map(item=>({role:item.role,content:item.content}));
+    $('prompt').value=''; $('send').disabled=true; $('newTask').disabled=true; notice(''); addMessage('user',message);
     try {
-      const data = await getJson('/api/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,task_id:taskId,data_version:$('dataVersion').value,rule_version:$('ruleVersion').value,score_config_version:$('scoreConfig').value})});
-      addMessage('user', message); addMessage('assistant', data.reply || '请求已收到。');
-      if (data.task_id) { const changed = taskId !== data.task_id; taskId = data.task_id; localStorage.lab2TaskId = taskId; if (changed) { $('results').hidden = true; renderPendingScores(); } await poll(); if (lastStatus === 'running' || lastStatus === 'queued') { if (!timer) timer = setInterval(poll, 2500); } }
-    } catch(e) { notice('请求失败：' + e.message, true); }
-    finally { $('send').disabled = false; $('newTask').disabled = false; }
+      const data=await getJson('/api/agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,task_id:taskId || sourceTaskId || null,source_task_id:sourceTaskId || null,analysis_task_id:analysisTaskId,history,analysis_config:analysisConfig,user_ids:userIds,data_version:$('dataVersion').value,rule_version:$('ruleVersion').value,score_config_version:$('scoreConfig').value})});
+      addMessage('assistant',data.reply || (data.status==='unavailable' ? '当前分析不可用。' : '请求已收到。'));
+      if (data.tool_events) renderToolEvents(data.tool_events);
+      if (data.task_id) { const changed=taskId!==data.task_id; taskId=data.task_id; localStorage.lab2TaskId=taskId; if (changed) { $('results').hidden=true; renderPendingScores(); } touchSession(); await poll(); }
+      if (data.analysis_task_id) { const changed=analysisTaskId!==data.analysis_task_id; analysisTaskId=data.analysis_task_id; if (changed) session.lastResult=null; touchSession(); if (changed || lastAnalysisStatus!=='complete') await pollAnalysis(); }
+      const returned=(Array.isArray(data.results)&&data.results.length ? data.results.map(entry=>entry.result) : data.result ? [data.result] : []).filter(item=>item && (item.task || item.results || item.reason));
+      if (returned.length) {
+        const cards=[];
+        for (const item of returned) {
+          if (item.task==='analysis_report' && item.report) await renderAnalysisReport(item.report);
+          else if (item.task==='governance_report' && item.report) renderReport(item.report);
+          else { renderAgentResult(item,true); cards.push(item); }
+        }
+        session.lastResult=cards.length ? cards : null; touchSession();
+      }
+      if (data.error && data.status==='unavailable') notice(data.error==='missing_api_key' ? 'DeepSeek 未配置' : 'Agent 暂不可用',true);
+    } catch(e) { addMessage('assistant','请求失败：'+e.message); notice('请求失败：'+e.message,true); }
+    finally { $('send').disabled=false; $('newTask').disabled=false; $('prompt').focus(); }
   }
   async function poll() {
-    if (!taskId) return;
-    const requestedTask = taskId;
+    if (!taskId) return; const requestedTask=taskId;
     try {
-      const state = await getJson('/api/tasks/' + encodeURIComponent(requestedTask));
-      if (taskId !== requestedTask) return;
+      const state=await getJson('/api/tasks/'+encodeURIComponent(requestedTask)); if (taskId!==requestedTask) return;
       renderStatus(state);
-      if ((state.status === 'queued' || state.status === 'running') && !timer) timer = setInterval(poll, 2500);
-      if (state.status === 'complete') { if (timer) clearInterval(timer); timer = null; const report = await getJson('/api/tasks/' + encodeURIComponent(requestedTask) + '/report'); if (taskId === requestedTask) renderReport(report); }
-      if (state.status === 'failed') { if (timer) clearInterval(timer); timer = null; }
-    } catch(e) { if (taskId !== requestedTask) return; notice('状态读取失败：' + e.message, true); if (timer) clearInterval(timer); timer = null; }
+      if ((state.status==='queued'||state.status==='running') && !timer) timer=setInterval(poll,2500);
+      if (state.status==='complete') { if (timer) clearInterval(timer); timer=null; const report=await getJson('/api/tasks/'+encodeURIComponent(requestedTask)+'/report'); if (taskId===requestedTask) {renderReport(report); loadSourceTasks(requestedTask);} }
+      if (state.status==='failed') { if (timer) clearInterval(timer); timer=null; }
+    } catch(e) { if (taskId!==requestedTask) return; notice('状态读取失败：'+e.message,true); if (timer) clearInterval(timer); timer=null; }
   }
   function renderReport(report) {
-    $('results').hidden = false; $('qualityState').textContent = '已生成'; $('qualityState').className = 'state-pill complete';
+    $('emptyConversation').hidden=true; $('results').hidden = Boolean(analysisTaskId && lastAnalysisStatus==='complete'); document.querySelector('.quality').hidden=false; $('qualityState').textContent = '已生成'; $('qualityState').className = 'state-pill complete';
     $('scores').innerHTML = Object.entries(report.raw.scores).map(([name,before]) => {
       const after = report.clean.scores[name], delta = before == null || after == null ? null : after-before;
       const rawEvidence = report.score_evidence?.raw?.[name], cleanEvidence = report.score_evidence?.clean?.[name];
@@ -371,9 +430,28 @@
     $('evidenceLinks').innerHTML = `<a href="${base}/report" target="_blank" rel="noopener">评估报告 ↗</a><a href="${base}/manifest" target="_blank" rel="noopener">产物清单 ↗</a>` + (report.unresolved_ties?.total_retained ? `<a href="${base}/unresolved" target="_blank" rel="noopener">未核验冲突 ↗</a>` : '<span>无未核验冲突</span>');
     Promise.all(['users','movies','ratings'].map(t => getJson(base + '/sample?table=' + t))).then(items => $('samples').textContent = items.map(x => x.table + '\n' + x.sample.join('\n')).join('\n\n')).catch(e => $('samples').textContent = '样例读取失败：' + e.message);
   }
-  $('send').addEventListener('click', send);
-  $('newTask').addEventListener('click', () => { resetView(); $('prompt').focus(); });
-  $('prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } });
+  $('send').addEventListener('click',send);
+  $('newTask').addEventListener('click',()=>{resetView();$('prompt').focus();});
+  $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+  $('configToggle').addEventListener('click',()=>{const open=$('configPanel').hidden;$('configPanel').hidden=!open;$('configToggle').setAttribute('aria-expanded',String(open));});
+  document.querySelectorAll('.starter').forEach(button=>button.addEventListener('click',()=>{$('prompt').value=button.dataset.prompt;$('prompt').focus();}));
+  $('sessionList').addEventListener('click',e=>{if($('send').disabled)return;const button=e.target.closest('[data-session]');if(button)restoreSession(button.dataset.session);});
+  $('taskTab').addEventListener('click',()=>{ $('taskPane').hidden=false;$('filesPane').hidden=true;$('taskTab').classList.add('active');$('filesTab').classList.remove('active');$('taskTab').setAttribute('aria-selected','true');$('filesTab').setAttribute('aria-selected','false'); });
+  $('filesTab').addEventListener('click',()=>{ $('taskPane').hidden=true;$('filesPane').hidden=false;$('filesTab').classList.add('active');$('taskTab').classList.remove('active');$('filesTab').setAttribute('aria-selected','true');$('taskTab').setAttribute('aria-selected','false'); });
+  $('startAnalysis').addEventListener('click',async()=>{
+    const source=selectedSourceTaskId(); if (!/^[0-9a-f]{12}$/i.test(source)) {notice('请选择已验证的清洗任务，或填写有效任务 ID。',true);return;}
+    let analysisConfig,userIds; try {analysisConfig=readAnalysisConfig();userIds=readUserIds();} catch(e) {notice(e.message,true);return;}
+    $('startAnalysis').disabled=true; notice('');
+    try {const data=await getJson('/api/analysis/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_task_id:source,analysis_config:analysisConfig,user_ids:userIds})});
+      if (!data.analysis_task_id) throw Error(data.reply || '未返回分析任务 ID');
+      if (!currentSession()) createSession('分析任务 · '+source);
+      analysisTaskId=data.analysis_task_id; currentSession().lastResult=null; touchSession(); renderAnalysisStatus({analysis_task_id:analysisTaskId,status:data.status || 'queued',stage:'queued',progress:data.reply || '来源清洗任务 '+source+' · 等待运行'}); await pollAnalysis();
+    } catch(e) {notice('分析任务未启动：'+e.message,true);updateStartAnalysisAvailability();}
+  });
+  $('sourceTaskSelect').addEventListener('change',updateStartAnalysisAvailability);
+  $('sourceTaskInput').addEventListener('input',updateStartAnalysisAvailability);
+  $('targetDimensions').addEventListener('input',()=>{$('informationThreshold').disabled=Boolean($('targetDimensions').value);});
+  $('informationThreshold').addEventListener('input',()=>{$('targetDimensions').disabled=Boolean($('informationThreshold').value);});
   function closePickers(except) {
     document.querySelectorAll('.picker').forEach(picker => {
       if (picker === except) return;
@@ -427,10 +505,17 @@
     picker.addEventListener('focusout', e => { if (!picker.contains(e.relatedTarget)) toggle(false); });
     refresh();
   }
-  document.addEventListener('pointerdown', e => { if (!e.target.closest('.picker')) closePickers(); });
-  renderPendingScores();
-  getJson('/api/config').then(config => { for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) { $(id).innerHTML = config[key].map(value => `<option value="${esc(value)}" ${value === config.defaults[selected] ? 'selected' : ''}>${esc(value)}</option>`).join(''); setupPicker(id); } }).catch(e => notice('配置读取失败：' + e.message + '。请通过服务地址打开页面。', true));
-  if (localStorage.lab2TaskId) { taskId = localStorage.lab2TaskId; poll(); }
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.picker'))closePickers();});
+  renderPendingScores(); renderSessionList();
+  getJson('/api/config').then(config=>{
+    for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) {
+      const values=Array.isArray(config[key])?config[key]:[]; $(id).innerHTML=values.map(value=>`<option value="${esc(value)}" ${value===config.defaults?.[selected]?'selected':''}>${esc(value)}</option>`).join(''); setupPicker(id);
+    }
+    renderModelStatus(config.agent); loadSourceTasks(!sessions.length && config.latest_analysis_task_id ? config.latest_analysis_source_task_id : config.latest_source_task_id);
+    if (!sessions.length && config.latest_analysis_task_id) { createSession('已有迭代二分析'); analysisTaskId=config.latest_analysis_task_id; touchSession(); pollAnalysis(); }
+  }).catch(e=>notice('配置读取失败：'+e.message+'。请通过服务地址打开页面。',true));
+  if (sessions.length) restoreSession(sessions[0].id);
+  else if (localStorage.lab2TaskId) { const session=createSession('上次清洗任务'); taskId=localStorage.lab2TaskId; touchSession(); poll(); }
 </script>
 </body>
 </html>

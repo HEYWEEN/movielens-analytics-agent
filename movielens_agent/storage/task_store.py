@@ -3,6 +3,7 @@
 import json
 import sqlite3
 import threading
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,8 +17,14 @@ class TaskStore:
             db.execute("CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, payload TEXT NOT NULL)")
         self._recover_interrupted()
 
+    @contextmanager
     def _connect(self):
-        return sqlite3.connect(self.path, timeout=30)
+        db = sqlite3.connect(self.path, timeout=30)
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     def _recover_interrupted(self):
         with self.lock, self._connect() as db:

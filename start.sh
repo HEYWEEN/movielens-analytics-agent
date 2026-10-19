@@ -20,12 +20,18 @@ case "$mode" in
 esac
 
 if ! command -v python3 >/dev/null 2>&1; then
-  printf 'Python 3.9+ is required.\n' >&2
+  printf 'Python 3.10+ is required.\n' >&2
   exit 1
 fi
-if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))'; then
-  printf 'Python 3.9+ is required.\n' >&2
+if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))'; then
+  printf 'Python 3.10+ is required.\n' >&2
   exit 1
+fi
+if ! python3 -c 'import numpy, sklearn, joblib' >/dev/null 2>&1; then
+  printf 'Warning: iteration-two analysis dependencies are missing. Run: python3 -m pip install -r requirements-analysis.txt\n' >&2
+fi
+if [ -z "${DEEPSEEK_API_KEY:-}" ]; then
+  printf 'Warning: DEEPSEEK_API_KEY is unset; model chat will be unavailable.\n' >&2
 fi
 
 if [ ! -f "$project_dir/ml-1m/users.dat" ] ||
