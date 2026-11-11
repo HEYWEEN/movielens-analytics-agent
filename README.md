@@ -12,17 +12,19 @@
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -r requirements-analysis.txt
-export DEEPSEEK_API_KEY='你的密钥'  # 仅在启动服务的终端设置；不要写进仓库
+nano .env                           # 首次配置：填写 DEEPSEEK_API_KEY='你的密钥'
 ./start.sh                           # 一键启动网页，默认 http://127.0.0.1:8765
 ./start.sh --hadoop                  # 必须使用 Hadoop；未配置时明确退出
 ./start.sh --local                   # 明确使用本地验证模式
 LAB2_PORT=9000 ./start.sh            # 自定义端口
 python3 -m unittest discover -p 'test_*.py' -v
+# 前端开发回归（需要 Node.js）
+node --test tests/frontend-history.test.cjs
 python3 verify_iteration1.py runs/<task_id>  # 核验正式 Hadoop 产物
 # 用下方分析命令生成新任务后，再运行 verify_iteration2.py 核验对应目录
 ```
 
-`DEEPSEEK_API_KEY` 只由服务端读取。未设置时网页仍可查看已发布报告，也能从“开始分析”按钮执行算法；模型对话会显示不可用。默认模型为 `deepseek-flash`，可用 `DEEPSEEK_MODEL` 调整。首次分析前须先有通过清单校验的迭代一任务；网站会列出可用来源。改动聚类数、目标维数或信息保留阈值需要新建分析任务，不会更改已发布模型；指定 UserID 集合只筛选已发布结果，不重训模型。
+`start.sh` 自动加载项目根目录的 `.env`，其中的配置优先于启动终端的同名变量，只对本次服务进程及其子进程生效。首次在 `.env` 中填写 `DEEPSEEK_API_KEY='你的密钥'`，保存后以后直接运行启动脚本即可。`.env` 已被 Git 忽略。`DEEPSEEK_API_KEY` 只由服务端读取。未设置时网页仍可查看已发布报告，也能从“开始分析”按钮执行算法；模型对话会显示不可用。默认模型为 `deepseek-flash`，可用 `DEEPSEEK_MODEL` 调整。首次分析前须先有通过清单校验的迭代一任务；网站会列出可用来源。改动聚类数、目标维数或信息保留阈值需要新建分析任务，不会更改已发布模型；指定 UserID 集合只筛选已发布结果，不重训模型。
 
 不通过网页时可直接运行和核验一个完整分析任务：
 
@@ -84,7 +86,7 @@ index.html ──HTTP──> server.py (DeepSeek 工具调度、任务状态、�
 movielens-analytics-agent/
 ├── start.sh                     # 推荐的网页启动入口：自动选 Hadoop 或本地模式
 ├── hadoop_local.sh              # 固定 Hadoop 3.4.2 单机环境的运行入口
-├── index.html                   # 三栏 Agent 工作台、任务、分析结果及证据
+├── index.html                   # 对话工作台、逐轮结果卡片与可展开的工作记录
 ├── server.py                    # HTTP API、DeepSeek 工具调用、任务调度
 ├── analysis_pipeline.py         # 分类、聚类、降维训练与已发布结果查询
 ├── verify_iteration2.py         # 迭代二产物、版本和上游链校验
@@ -103,6 +105,7 @@ movielens-analytics-agent/
 │       └── artifacts.py         # 产物清单与 SHA-256 校验
 ├── docs/
 │   ├── architecture.md          # 架构与后续迭代接入约定
+│   ├── frontend-design.md       # 米白橙色视觉规则与会话结果约定
 │   ├── iteration1-experiment.md # 本轮真实 Hadoop 实验结果与局限
 │   ├── iteration2-experiment.md # 第二轮真实分析实验与评价边界
 │   ├── project-roadmap.md        # 三轮任务顺序与验收点
@@ -111,6 +114,8 @@ movielens-analytics-agent/
 ├── test_architecture.py         # 任务持久化与产物校验测试
 ├── test_analysis_pipeline.py    # 时间特征、参数与迭代二清单验证
 ├── test_agent_api.py            # 工具调度与服务端密钥边界
+├── test_deepseek_stream.py      # 服务端真实流式传输协议测试
+├── tests/frontend-history.test.cjs # 前端消息结果保留与恢复回归
 ├── 官方基准对照核查.md            # 与官方 MovieLens 1M 的历史对照
 ├── ml-1m/                      # 课程输入，已忽略：users.dat / movies.dat / ratings.dat
 └── runs/                        # 运行时生成，不提交：任务 SQLite 与各任务产物
@@ -120,7 +125,7 @@ movielens-analytics-agent/
 
 ## 任务与产物
 
-迭代一原有 `POST /api/chat` 发起任务或追问；`GET /api/tasks/<id>` 查询状态；`/report`、`/sample?table=ratings`、`/unresolved`、`/manifest` 分别获取报告、样例、未核验冲突及产物清单。迭代二使用 `POST /api/agent/chat` 对话；网页使用 `POST /api/agent/stream`，以 NDJSON 实时接收阶段、工具事件、模型文本增量与最终回答。模型端使用 DeepSeek SSE 流，网页边接收边显示，回复完成后保存会话；中断时保留已接收文字并提示未完成。`GET /api/source-tasks` 选择已验证来源，`POST /api/analysis/tasks` 发起训练，`GET /api/analysis/tasks/<id>` 读取进度；其 `/report` 与 `/artifacts/<name>` 提供已核验结果与公开产物。清单校验失败时拒绝读取。
+迭代一原有 `POST /api/chat` 发起任务或追问；`GET /api/tasks/<id>` 查询状态；`/report`、`/sample?table=ratings`、`/unresolved`、`/manifest` 分别获取报告、样例、未核验冲突及产物清单。迭代二使用 `POST /api/agent/chat` 对话；网页使用 `POST /api/agent/stream`，以 NDJSON 实时接收阶段、工具事件、模型文本增量与最终回答。模型端使用 DeepSeek SSE 流，网页边接收边显示，回复完成后按消息保存文本、工具记录和结果卡片；历史卡片随会话恢复，各自保留页签状态。工作记录可按需展开。中断时保留已接收文字并提示未完成。`GET /api/source-tasks` 选择已验证来源，`POST /api/analysis/tasks` 发起训练，`GET /api/analysis/tasks/<id>` 读取进度；其 `/report` 与 `/artifacts/<name>` 提供已核验结果与公开产物。清单校验失败时拒绝读取。
 
 任务状态和阶段事件分别写在 `runs/tasks.sqlite3` 与 `runs/analysis_tasks.sqlite3`。服务重启时，未完成的 `queued/running` 任务标记为失败，避免继续显示为运行中；用户可重新提交。当前一次只执行一个耗时任务，其他请求等待执行。SQLite 只保存任务元数据，数据文件仍位于 `runs/<task_id>/` 或 `runs/iteration2/<analysis_task_id>/`。
 

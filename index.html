@@ -4,76 +4,463 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MovieLens Agent · 分析工作台</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23126752'/%3E%3Cpath d='m8 23 5-14 3 8 3-6 5 12' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c46545'/%3E%3Cpath d='m8 23 5-14 3 8 3-6 5 12' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5'/%3E%3C/svg%3E">
   <style>
-    :root{font-family:"Songti SC","STSong","SimSun","Noto Serif CJK SC",serif;color:#1c2e28;background:var(--canvas);--canvas:#f2f5ef;--nav:#edf2e9;--surface:#fafcf7;--inset:#f5f8f1;--divider:#e4eadd;--motion:180ms cubic-bezier(.2,.65,.3,1);--green:#126955;--deep:#174a3b;--ink:#1c2e28;--muted:#667a70;--line:#dfe6da;--soft:var(--inset);--warning:#a9681f;--danger:#ae4d43}
-    *{box-sizing:border-box}html,body{height:100%;margin:0}body{min-width:920px}button,select,textarea,pre,code{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}button:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #82bea1;outline-offset:2px}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .app-shell{height:100vh;min-height:620px;display:grid;grid-template-columns:244px minmax(540px,1fr) 318px;overflow:hidden;background:var(--canvas)}
-    .rail{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:var(--nav);border-right:1px solid var(--divider);padding:22px 13px 17px}.brand{display:flex;align-items:center;gap:11px;padding:0 9px 25px}.brandmark{width:31px;height:31px;display:grid;place-items:center;flex:none;border-radius:9px;background:var(--green);color:#fff;font-weight:800;font-size:18px;letter-spacing:-.06em;box-shadow:0 5px 12px #12695527}.brand-name{display:block;font-size:14px;font-weight:780;letter-spacing:-.02em;line-height:1.15}.brand-sub{display:block;margin-top:3px;color:#73877a;font-size:10px;letter-spacing:.02em}.new-task{display:flex;align-items:center;gap:9px;width:100%;min-height:39px;padding:0 12px;border:1px solid #a6cfb4;border-radius:10px;background:#e7f3e9;color:#0c6746;text-align:left;font-size:13px;font-weight:720;transition:background-color var(--motion),border-color var(--motion)}.new-task:hover{background:#ddf0e3;border-color:#96bba0}.new-task svg,.rail-icon svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
-    .rail-section{margin-top:28px;padding:0 10px 10px;color:#789084;font-size:11px;font-weight:700;letter-spacing:.07em}.session-list{min-height:0;overflow:auto;flex:1;padding:0 2px}.session-item{width:100%;min-height:42px;display:flex;align-items:center;gap:9px;border:0;border-radius:9px;padding:9px 10px;background:transparent;text-align:left;color:#456257;font-size:12px;line-height:1.45}.session-item:hover{background:#e6efe8}.session-item.active{background:#dcece1;color:#174e38;font-weight:720}.session-item .rail-icon{display:grid;place-items:center;flex:none;opacity:.7}.session-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.session-empty{margin:6px 10px;color:#819489;font-size:12px;line-height:1.65}.rail-footer{border-top:1px solid var(--divider);padding:15px 9px 1px}.model-line{display:flex;align-items:center;gap:8px;color:#465f51;font-size:12px;font-weight:650}.model-dot{width:7px;height:7px;border-radius:50%;background:#94a8a0}.model-dot.ready{background:var(--green);box-shadow:0 0 0 3px #c9e8d1}.model-dot.unavailable{background:#b98948}.rail-caption{margin-top:5px;color:#82958a;font-size:11px;line-height:1.5}
-    .chat-panel{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:var(--canvas)}.chat-header{height:68px;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 30px;border-bottom:1px solid var(--divider)}.header-title{min-width:0}.header-kicker{display:block;color:#789083;font-size:10px;font-weight:700;letter-spacing:.09em}.chat-header h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:3px 0 0;font-size:15px;font-weight:740;letter-spacing:-.015em}.header-meta{display:flex;align-items:center;gap:10px;min-width:0;color:#7b8e83;font-size:11px}.engine-pill{border:1px solid var(--line);background:#f3faf5;color:#3d6c55;border-radius:6px;padding:5px 8px;white-space:nowrap}.task-short{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}.conversation-body{min-height:0;flex:1;overflow:auto;scrollbar-color:#d2ddd5 transparent;padding:34px clamp(28px,5vw,88px) 48px;display:flex;flex-direction:column;gap:16px}.conversation-body>*{width:100%;max-width:840px;margin-left:auto;margin-right:auto}.empty-conversation{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;padding-bottom:58px}.empty-symbol{width:56px;height:56px;display:grid;place-items:center;background:#e8f4eb;border:1px solid #d6e9dc;border-radius:17px;color:#147651;box-shadow:0 10px 30px #143d2512}.empty-symbol svg{width:29px;height:29px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}.empty-conversation h2{margin:23px 0 7px;font-size:27px;letter-spacing:-.035em}.empty-conversation p{max-width:550px;margin:0;color:#718278;line-height:1.7;font-size:14px}.starter-label{margin:35px 0 10px;color:#87968c;font-size:11px;font-weight:700;letter-spacing:.06em}.starter-list{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.starter{min-height:100px;border:1px solid #dfe9e1;border-radius:13px;background:var(--inset);padding:14px;text-align:left;color:var(--ink);box-shadow:0 5px 15px #18422b06;transition:background-color var(--motion),border-color var(--motion),box-shadow var(--motion)}.starter:hover{background:#edf3e9;border-color:#b5cbb4;box-shadow:0 5px 15px #18422b08}.starter-icon{display:block;color:var(--green);height:22px}.starter-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.starter strong{display:block;margin:4px 0 4px;font-size:13px}.starter span:last-child{display:block;color:#7a8b80;font-size:11px;line-height:1.45}
-    #messages{display:flex;flex-direction:column;gap:24px}.message{display:flex;align-items:flex-start;gap:12px;animation:arrive .25s ease-out both}.message.user{justify-content:flex-end}.message.user .avatar{display:none}.message-content{min-width:0;max-width:85%}.avatar{width:28px;height:28px;display:grid;place-items:center;flex:none;border-radius:8px;background:#e9f4eb;color:var(--green)}.avatar svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.bubble{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.75}.message.user .bubble{border:1px solid #d4e3d3;border-radius:15px 15px 4px 15px;background:#e4eee2;padding:12px 16px}.message.assistant .bubble{padding:3px 0;color:#26372e}.message time{display:block;margin-top:5px;color:#9bab9e;font-size:10px}.message.assistant time{margin-top:10px}.message.user time{text-align:right}.message.error .bubble{color:var(--danger)}
-    .timeline{border-left:2px solid #c8ddcd;margin-top:3px;padding:0 0 0 22px}.step{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;position:relative;min-height:52px}.step:not(:last-child):before{content:"";position:absolute;left:8px;top:21px;bottom:-5px;border-left:1px dashed #c5d8ca}.step-dot{width:18px;height:18px;z-index:1;display:grid;place-items:center;border:1.5px solid #bdcec3;border-radius:50%;background:var(--surface);color:#fff;font-size:10px;font-weight:800}.step.done .step-dot{border-color:var(--green);background:var(--green)}.step.active .step-dot{border-color:var(--green);box-shadow:0 0 0 4px #e3f2e8}.step-title{margin:0 0 3px;font-size:12px;font-weight:700}.step-detail{margin:0;color:#7c8b80;font-size:11px;line-height:1.5}.task-activity{border:1px solid #dceade;border-radius:11px;background:#f8fbf8;padding:13px 15px;font-size:12px;color:#476354}.task-activity strong{color:#2b533e}.activity-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-weight:750}.activity-icon{width:17px;height:17px;color:var(--green)}.activity-icon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.activity-detail{color:#768b7b;line-height:1.5}
-    .composer-wrap{padding:16px clamp(28px,5vw,88px) 20px;background:linear-gradient(180deg,rgb(242 245 239 / 0),var(--canvas) 32px)}.composer-wrap>*{max-width:840px;margin-left:auto;margin-right:auto}.composer{border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:0 5px 20px #243d2510;transition:border-color var(--motion),box-shadow var(--motion),background-color var(--motion)}.composer:focus-within{border-color:#9bb9aa;background:var(--surface);box-shadow:0 6px 24px #243d2514}.composer #prompt{display:block;width:100%;height:58px;min-height:58px;max-height:180px;resize:none;padding:18px 20px 8px;border:0;border-radius:22px;background:transparent;color:var(--ink);font-size:15px;line-height:1.7;outline:none;box-shadow:none;overflow-y:auto}.composer #prompt:focus-visible{outline:none;box-shadow:none}.composer #prompt::placeholder{color:#8a9a92;font-weight:400}.composer-bottom{display:flex;align-items:center;gap:11px;min-height:43px;padding:3px 12px 11px 13px}.tool-toggle{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:8px;background:transparent;padding:6px 8px;color:#52745c;font-size:12px;font-weight:680}.tool-toggle:hover,.tool-toggle[aria-expanded=true]{background:#e9f5eb}.tool-toggle svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.composer-tip{color:#9aab9e;font-size:11px;white-space:nowrap}.composer-spacer{flex:1}.send{width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--green);color:#fff;box-shadow:none;transition:background-color var(--motion)}.send:hover:not(:disabled){background:#0d5745}.send svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}.config-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:9px;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--inset)}.field{min-width:0}.config-divider{grid-column:1/-1;margin-top:5px;padding-top:13px;border-top:1px solid #e3ebe5;color:#365c43;font-size:11px;font-weight:750}.config-divider span{margin-left:7px;color:#94a397;font-weight:500}.config-input{width:100%;height:34px;border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:var(--surface);color:#294432;font-size:11px;outline:none}.config-input:focus{border-color:#7db993}.config-input:disabled{background:#f1f5f1;color:#9fad9f}.config-note{grid-column:1/-1;margin:1px 0;color:#899b8d;font-size:10px;line-height:1.5}.field-label{display:block;margin-bottom:6px;color:#75877b;font-size:11px;font-weight:650}.picker{position:relative}.picker-trigger{width:100%;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:var(--surface);color:#2e4737;text-align:left;font-size:11px}.picker-trigger:hover{border-color:#a3cdb0}.picker-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.picker-chevron{height:7px;width:7px;flex:none;border-right:1.5px solid #719281;border-bottom:1.5px solid #719281;transform:rotate(45deg) translateY(-2px)}.picker-menu{position:absolute;z-index:15;top:calc(100% + 4px);left:0;right:0;max-height:210px;overflow:auto;border:1px solid #cadfce;border-radius:9px;background:var(--surface);padding:4px;box-shadow:0 12px 28px #163a2329}.picker-option{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;border-radius:6px;padding:8px;background:transparent;text-align:left;color:#2f493a;font-size:11px}.picker-option:hover,.picker-option[aria-selected=true]{background:#edf7ef;color:var(--green)}.picker-check{font-weight:800}.notice{margin-top:9px;padding:9px 11px;border:1px solid #d9e8dd;border-radius:9px;background:#f7fbf8;color:#4f6c57;font-size:12px;line-height:1.5}.notice.error{border-color:#ecd4ce;background:#fff6f3;color:#9c453c}
-    .inspector{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;border-left:1px solid var(--divider);background:var(--nav)}.inspector-head{height:68px;min-height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--divider)}.inspector-head h2{margin:0;font-size:13px;font-weight:750}.inspector-meta{font-size:10px;color:#8d9f91}.inspector-tabs{height:43px;display:flex;align-items:stretch;padding:0 17px;border-bottom:1px solid var(--divider)}.inspector-tab{border:0;border-bottom:2px solid transparent;background:transparent;color:#819287;padding:0 13px;font-size:11px;font-weight:650}.inspector-tab.active{border-bottom-color:var(--green);color:var(--green)}.sidebar{min-height:0;flex:1;overflow:auto;padding:17px 18px 27px}.sidebar .panel{padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--divider)}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.panel-head h2{margin:0;font-size:12px;font-weight:750}.state-pill{display:inline-flex;align-items:center;gap:5px;color:#829289;font-size:10px;white-space:nowrap}.state-pill:before{content:"";width:6px;height:6px;border-radius:50%;background:#9aaca0}.state-pill.running:before,.state-pill.complete:before{background:var(--green)}.state-pill.failed:before{background:var(--danger)}.overview dl{display:grid;grid-template-columns:67px minmax(0,1fr);gap:11px 10px;margin:0;font-size:11px;line-height:1.5}.overview dt{color:#8a9b8e}.overview dd{min-width:0;margin:0;color:#43564a;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.progress-track{width:100%;height:5px;overflow:hidden;border-radius:99px;background:#e3ebe5;margin:2px 0 4px}.progress-fill{height:100%;width:0;background:var(--green);border-radius:99px;transition:width .4s}.quality-grid{display:grid;grid-template-columns:1fr;gap:7px}.metric{padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}.metric-head{display:flex;align-items:center;gap:8px}.metric-icon{width:22px;height:22px;display:grid;place-items:center;flex:none;color:var(--green);border-radius:6px;background:#eef7f0}.metric-icon svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.metric-name{font-size:11px;font-weight:700}.metric-name-cn{display:none}.metric-help{display:none}.metric-pending{display:block;margin-top:3px;margin-left:30px;color:#97a89c;font-size:10px}.metric-value{display:inline-block;margin:7px 5px 0 30px;color:var(--green);font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}.metric-unit{font-size:10px;color:#9aab9e}.metric-before{display:block;margin:3px 0 0 30px;color:#829489;font-size:10px}.metric-delta{display:inline-block;margin:5px 0 0 30px;color:#758a7a;font-size:10px}.metric-delta.good{color:var(--green)}.metric-delta.bad{color:var(--danger)}.metric-detail{margin:8px 0 0 30px;border-top:1px solid #ebf1ec;padding-top:6px}.metric-detail summary{cursor:pointer;color:#5a8265;font-size:10px}.metric-detail-body{padding-top:5px;color:#718378;font-size:10px;line-height:1.5}.evidence p{margin:0 0 10px;color:#849589;font-size:11px;line-height:1.6}.evidence-links{display:flex;flex-direction:column;gap:6px}.evidence-links a,.evidence-links span{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:9px 10px;color:#4d7259;font-size:11px;font-weight:650}.evidence-links span{color:#a2afa6;background:#fcfdfc}.evidence-links a:after{content:"↗";font-size:12px}.analysis-context{font-size:11px;color:#829488;line-height:1.6}.context-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0}.context-row strong{color:#425a48;font-weight:700}.source-picker{margin-top:11px}.source-picker label{display:block;margin-bottom:5px;color:#829488;font-size:10px}.source-picker select{width:100%;height:32px;border:1px solid var(--line);border-radius:7px;background:var(--surface);padding:0 8px;color:#3b5c46;font-size:11px}.context-actions{margin-top:10px}.context-actions button{width:100%;border:1px solid #cae1d0;border-radius:8px;background:#f0f8f1;padding:8px 10px;color:var(--green);font-size:11px;font-weight:700}.context-actions button:hover{background:#e6f2e8}
-    .details,.analysis-result{width:100%;border:1px solid var(--line);border-radius:13px;background:var(--surface);padding:20px 22px;box-shadow:0 7px 22px #183d2608}.details .panel-head{margin-bottom:17px}.details .panel-head h2,.analysis-result h2{font-size:15px;letter-spacing:-.02em}.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px}.detail-block{min-width:0}.detail-block h3{font-size:12px;margin:0 0 9px}.detail-block p,.detail-block li{font-size:11px;color:#61746a;line-height:1.7}.detail-block ul{padding-left:18px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:7px 5px;border-bottom:1px solid #e9efe9}th{color:#7d9182;font-weight:700;white-space:nowrap}details{border-top:1px solid #edf2ee;padding-top:9px;margin-top:10px}summary{cursor:pointer;color:var(--green);font-size:11px;font-weight:700}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:8px;background:#f3f8f4;padding:11px;color:#516858;font-size:10px;line-height:1.6}.version-line{border-top:1px solid #e7efe8;padding-top:10px;margin:17px 0 0;color:#90a093;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
-    :where(.session-item,.tool-toggle,.inspector-tab,.result-tabs button,.context-actions button,.evidence-links a,.picker-trigger,.picker-option){transition:background-color var(--motion),border-color var(--motion),color var(--motion)}
-    /* Result components: one surface, with a visual grammar for each analysis. */
-    .app-shell{grid-template-columns:224px minmax(540px,1fr) 300px}
-    .conversation-body{padding-top:30px}.conversation-body>*,.composer-wrap>*{max-width:880px}
-    .chat-header{height:64px;min-height:64px}.header-kicker{display:none}.header-title h1{font-size:14px;font-weight:600;line-height:1.6}
-    .message{scroll-margin-top:26px}.message.assistant .bubble{font-size:14px;line-height:1.85}.message.assistant .avatar{background:#ecf3ee;color:#42765c}
-    #analysisResults{display:flex;flex-direction:column;gap:18px;scroll-margin-top:28px}
-    .analysis-result{width:100%;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:none;overflow:hidden}
-    .result-cover{display:flex;align-items:center;gap:12px;padding:22px 26px 20px}.result-emblem{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;color:var(--green);background:#edf4ef;flex:none}
-    .result-emblem svg,.tile-icon svg,.compression-icon svg,.algorithm-order svg,.empty-result-symbol svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
-    .result-cover h2{margin:0;color:#213e31;font-size:17px;font-weight:700;letter-spacing:-.025em}.result-cover p{margin:5px 0 0;color:#839187;font-size:11px}
-    .result-state{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:#63846f;font-size:11px;font-weight:500;white-space:nowrap}.result-state:before{content:'';width:6px;height:6px;border-radius:50%;background:#60896c}.result-state.caution{color:#9b763e}.result-state.caution:before{background:#bf9b62}
-    .result-tabs{display:flex;gap:25px;margin:0 26px;border-bottom:1px solid #e8ede8}.result-tabs button{padding:12px 0 13px;background:none;border:0;border-bottom:2px solid transparent;color:#839187;font-size:12px;font-weight:550;white-space:nowrap}.result-tabs button[aria-selected=true]{border-bottom-color:var(--green);color:var(--green);font-weight:700}.result-tabs button:hover{color:#2f6048}.result-tabs button:focus{outline:none}.result-tabs button:focus-visible{outline:none;background:#f0f5f1;box-shadow:inset 0 -2px var(--green);border-radius:5px 5px 0 0}
-    .result-view{padding:27px 26px 23px}.result-bottom{padding:0 26px}.analysis-lead{margin:0 0 25px}.lead-kicker{display:block;color:#809184;font-size:11px;line-height:1.5}.analysis-lead h3{margin:7px 0 8px;color:#244b38;font-size:23px;font-weight:680;letter-spacing:-.035em;line-height:1.45}.analysis-lead p{margin:0;color:#7c8d80;font-size:12px;line-height:1.7}
-    .overview-intro{display:flex;align-items:flex-start;gap:12px;margin-bottom:26px}.completion-mark{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--green);font-size:15px;flex:none;margin-top:3px}.overview-intro h3{font-size:22px;font-weight:650;color:#234833;margin:0 0 8px;letter-spacing:-.03em}.overview-intro p{font-size:13px;line-height:1.7;color:#7c8b80;margin:0}
-    .capability-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:30px}.capability-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:18px 17px 17px;border:1px solid var(--line);border-radius:12px;background:var(--inset);transition:background-color var(--motion),border-color var(--motion)}.capability-tile:hover{background:#f0f6f0;border-color:#bfd3c4}.tile-icon{display:grid;place-items:center;width:23px;height:23px;color:#5d8469;margin-bottom:17px}.tile-icon svg{width:20px;height:20px}.tile-title{font-size:12px;color:#6c8172;font-weight:550}.tile-value{display:block;margin:8px 0 9px;color:#285740;font-size:29px;line-height:1.2;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.045em;white-space:nowrap}.tile-value small{font-size:11px;font-weight:500;color:#8a9a8e;letter-spacing:0}.tile-note{color:#8c9c8f;font-size:10px;line-height:1.7}.tile-open{position:absolute;top:16px;right:16px;color:#9fb3a4;font-size:16px}
-    .sample-summary{padding-top:22px;border-top:1px solid #edf1ec}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.section-heading h3{font-size:13px;font-weight:650;color:#3b5945;margin:0}.section-heading>span{font-size:11px;color:#8d9b90;font-variant-numeric:tabular-nums}.split-track{display:flex;height:7px;gap:3px;overflow:hidden;border-radius:10px}.split-track i{height:100%}.split-track .train,.split-labels .train{background:#427e5a}.split-track .validation,.split-labels .validation{background:#9fbaa2}.split-track .test,.split-labels .test{background:#d8e4d7}.split-labels{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px;font-size:11px;color:#85958a}.split-labels span{display:flex;align-items:center;gap:6px}.split-labels i{width:7px;height:7px;border-radius:2px}.split-labels strong{font-size:12px;color:#546d5c;font-weight:600;margin-left:2px;font-variant-numeric:tabular-nums}
-    .model-comparisons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}.model-comparison{min-width:0;padding:0 20px 0 0;border-right:1px solid #e7eee7}.model-comparison:last-child{padding:0;border:0}.model-comparison-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:19px}.model-comparison-head>div{display:flex;align-items:center;gap:7px}.model-comparison h4{margin:0;font-size:13px;font-weight:600;color:#3e5f4b}.algorithm-order{width:16px;height:16px;color:#7fa087}.algorithm-order svg{width:15px;height:15px}.prediction-label{color:#839689;font-size:10px;white-space:nowrap}.probability-value{color:#245f42;font-size:42px;font-weight:630;line-height:1.15;letter-spacing:-.05em;font-variant-numeric:tabular-nums;margin-bottom:21px}.secondary-model .probability-value{color:#637b6a}.probability-track{position:relative;height:7px;border-radius:4px;background:#eef3ed;margin-bottom:35px}.probability-track>i{display:block;height:100%;background:#43805b;border-radius:4px}.secondary-model .probability-track>i{background:#99b09b}.threshold-mark{position:absolute;top:-4px;bottom:-4px;width:1px;background:#81968a}.threshold-mark>span{position:absolute;top:17px;left:0;transform:translateX(-50%);font-size:10px;color:#93a095;white-space:nowrap}.model-small-metrics{display:flex;flex-wrap:wrap;gap:10px 18px;color:#8b9b8e;font-size:10px;line-height:1.8}.model-small-metrics strong{display:block;color:#4c6955;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-    .profile-strip{display:flex;align-items:center;gap:28px;padding:17px 19px;margin-bottom:25px;border:1px solid var(--line);border-radius:11px;background:var(--inset)}.profile-strip>div{min-width:0}.profile-strip strong{display:block;color:#315e42;font-size:24px;line-height:1.3;font-weight:630;letter-spacing:-.03em}.profile-strip span{font-size:10px;color:#8d9b8e}.profile-genres{margin-left:auto;max-width:48%}.genre-tags{display:flex;flex-wrap:wrap;gap:6px}.genre-tags>span{display:inline-block;padding:4px 8px;border-radius:5px;background:#eef4ed;color:#69816c;font-size:11px;line-height:1.4}
-    .cluster-algorithms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}.cluster-method{min-width:0}.cluster-method+ .cluster-method{border-left:1px solid #edf1ec;padding-left:26px}.cluster-method-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:22px}.cluster-method-head h4{margin:0;font-size:13px;font-weight:650;color:#42604b}.cluster-method-head>span{font-size:10px;color:#92a093;white-space:nowrap}.cluster-method-head strong{font-size:11px;color:#738976;font-weight:600}.group-row{display:flex;align-items:center;gap:11px;margin:0 0 20px}.group-symbol{height:28px;width:28px;display:grid;place-items:center;border-radius:8px;background:color-mix(in srgb,var(--group-color) 10%,white);color:var(--group-color);font-size:12px;font-weight:600;flex:none}.group-description{min-width:0;flex:1}.group-name{font-size:12px;color:#54705b;line-height:1.6}.group-size-track{height:4px;background:#edf2ec;border-radius:3px;margin-top:7px;overflow:hidden}.group-size-track i{display:block;height:100%;border-radius:3px}.group-count{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:55px}.group-count strong{font-size:15px;font-weight:600;color:#3b5f47;font-variant-numeric:tabular-nums}.group-count span{font-size:9px;color:#94a195}.user-group{display:flex;align-items:center;gap:15px;margin-bottom:17px}.user-group-number{font-size:38px;font-weight:630;line-height:1.3;color:var(--group-color);letter-spacing:-.05em;min-width:52px}.user-group h5{font-size:16px;font-weight:630;margin:5px 0;color:#3c6049;line-height:1.6}.user-group p{font-size:11px;color:#8b9b8e;margin:4px 0 0}.segment-summary{font-size:12px;line-height:1.85;color:#7e9081;margin:16px 0 0}.segment-evidence{padding:8px 0}.segment-evidence h5{font-size:12px;color:#57745e;margin:6px 0}.segment-evidence p{font-size:11px;color:#8b9b8f;line-height:1.75;margin:5px 0}
-    .compression-summary{padding:0 0 22px;margin:0 0 24px;border-bottom:1px solid #edf1ec}.compression-value{display:flex;align-items:baseline;gap:15px;margin:0;font-size:38px;font-weight:630;letter-spacing:-.04em;color:#345b3c;line-height:1.2;font-variant-numeric:tabular-nums}.compression-value>span{font-weight:300;font-size:29px;color:#97ab90}.compression-value>small{font-size:13px;font-weight:500;margin-left:-8px;color:#8d9d86}
-    .retention-comparison{margin-bottom:25px}.comparison-row{margin-bottom:16px}.comparison-row:last-child{margin-bottom:0}.comparison-line{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px}.comparison-line>span{font-size:12px;color:#5a7562}.comparison-line>strong{color:#3c674b;font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}.comparison-track{height:7px;background:#eff3ec;border-radius:4px;overflow:hidden}.comparison-track i{display:block;height:100%;border-radius:4px;background:#4d825a}.comparison-track i.secondary{background:#9aaf91}.comparison-note{display:block;font-size:10px;color:#98a392;margin-top:6px}
-    .projection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-bottom:12px}.projection-card{min-width:0;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}.projection-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 16px 0}.projection-heading h4{margin:0;font-size:13px;font-weight:650;color:#46684e}.projection-heading span{font-size:10px;color:#94a18e}.chart-shell{border:0;min-height:0;background:var(--surface);overflow:hidden}.chart-shell svg{display:block;width:100%;height:auto;margin:6px 0 0}.chart-axes{display:flex;justify-content:space-between;padding:0 17px 8px;color:#99a696;font-size:10px}.chart-legend{display:flex;flex-wrap:wrap;gap:6px 12px;padding:0 15px;color:#84957e;font-size:11px}.chart-legend span{display:inline-flex;align-items:center;gap:4px}.chart-legend i{width:5px;height:5px;border-radius:50%}.chart-caption{padding:9px 15px 14px;border:0;color:#94a18f;font-size:11px;margin:0;line-height:1.5}.reduction-evidence{padding:5px 0 12px}.reduction-evidence h4{font-size:13px;color:#4c6c53;margin:12px 0}.reduction-evidence table{font-size:10px;margin-top:14px}.reduction-evidence th{white-space:normal}
-    .method-note{font-size:11px;line-height:1.8;color:#879582;margin:16px 0 0;padding:0;border:0}.result-disclosure{margin:20px 0 0;padding:12px 0 0;border-top:1px solid #edf1ec}.result-disclosure summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;font-size:11px;font-weight:500;color:#81957f;cursor:pointer;padding:2px 0}.result-disclosure summary::-webkit-details-marker{display:none}.result-disclosure summary:after{content:'+';font-size:16px;font-weight:300;color:#9aac94}.result-disclosure[open]>summary:after{content:'−'}.result-disclosure>p{font-size:11px;line-height:1.8;color:#7f8f7e}.result-disclosure pre{font-size:10px;background:#f5f8f2;line-height:1.7;margin-bottom:12px}.evidence-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:16px 0 4px}.evidence-grid>div{min-width:0}.evidence-grid span{display:block;font-size:10px;color:#92a08e;margin-bottom:5px}.evidence-grid strong{font-size:12px;font-weight:550;color:#5b755e;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.evidence-label{margin-top:18px;font-size:10px;color:#94a18f}.evidence-version{font-size:10px!important;color:#9ba694!important;overflow-wrap:anywhere}.source-evidence{margin-top:0}.report-footer{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:16px 0 18px;font-size:10px;color:#a1ac9b}.report-footer a{color:#6c896c;font-size:11px}.empty-result{padding:17px 0 24px}.empty-result-symbol{width:36px;height:36px;display:grid;place-items:center;background:#f6f1e7;border-radius:10px;color:#b39662;margin-bottom:16px}.empty-result h3{font-size:19px;font-weight:620;color:#68785b;margin:0 0 10px}.empty-result p{font-size:13px;color:#92a08a;line-height:1.8;margin:0;max-width:48em}
-    .task-activity{padding:0;border:1px solid var(--line);background:var(--inset);border-radius:12px;overflow:hidden}.task-activity .activity-head{padding:15px 18px;margin:0;color:#51735b;font-size:12px;font-weight:600}.task-activity .activity-detail{padding:0 18px 15px;font-size:11px;color:#91a18e}.tool-history{margin:0;border:0;padding:0}.tool-history summary{display:flex;align-items:center;gap:8px;list-style:none;padding:12px 0;color:#8e9d89;font-size:11px;font-weight:500}.tool-history summary:after{content:'⌄';margin-left:auto;color:#b0bbaa}.tool-history>div{border-left:1px solid #dfe9db;padding:0 0 0 14px;margin:1px 0 14px 8px}.tool-history p{font-size:11px;color:#98a58f;line-height:1.8;margin:6px 0}.tool-history p:before{content:'✓';margin-right:9px;color:#819b78}.task-progress-card{padding:17px 19px}.task-progress-line{display:flex;align-items:center;gap:9px;color:#527258;font-size:12px}.task-progress-line strong{font-size:12px;font-weight:600}.task-progress-line>span:last-child{margin-left:auto;color:#8e9d85;font-size:11px}.task-progress-card p{margin:10px 0 12px;color:#8a9c82;font-size:12px;line-height:1.7}.task-progress-track{height:5px;border-radius:4px;background:#e8eee1;overflow:hidden}.task-progress-track>i{display:block;height:100%;background:#6e925f;border-radius:4px}.task-progress-track.indeterminate>i{width:25%;animation:taskScan 2.4s ease-in-out infinite}.task-activity:has(.tool-history){background:none;border:0;border-radius:0}.task-state-dot{width:7px;height:7px;border-radius:50%;background:#648c5c}.task-progress-card.failed .task-state-dot{background:#bb8a61}.task-progress-card.failed{background:#fcf8f1}.metric{box-shadow:none}.metric-value{font-size:18px}.inspector{background:var(--nav)}.sidebar .panel-head h2{font-weight:600}.inspector-meta{display:none}
-    .tool-history summary>svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7}.task-activity>details{margin:0}
-    @keyframes taskScan{0%{transform:translateX(-100%)}100%{transform:translateX(500%)}}
-    @media(min-width:1181px) and (max-width:1400px){.app-shell{grid-template-columns:208px minmax(540px,1fr) 280px}.conversation-body,.composer-wrap{padding-left:30px;padding-right:30px}.model-comparison-head{align-items:flex-start;flex-direction:column;gap:7px}.tile-value{font-size:25px}.cluster-algorithms{gap:18px}.cluster-method+ .cluster-method{padding-left:18px}.cluster-method-head{align-items:flex-start;flex-direction:column;gap:5px}}
+    :root {
+      font-family: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+      color: #292720;
+      background: #faf9f5;
+      --canvas: #faf9f5;
+      --nav: #f0eee6;
+      --surface: #fffefa;
+      --inset: #f4f2eb;
+      --ink: #292720;
+      --muted: #736f65;
+      --line: #e2dfd5;
+      --divider: #e9e5dc;
+      --accent: #c46545;
+      --accent-strong: #a94d32;
+      --accent-soft: #f5e8df;
+      --success: #55715e;
+      --warning: #946c2a;
+      --danger: #b14c42;
+      --motion: 300ms cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { min-width: 900px; font-size: 16px; line-height: 1.5; }
+    button, input, select, textarea, pre, code { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    a { color: var(--accent-strong); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button, a, summary, select { -webkit-tap-highlight-color: transparent; }
+    :where(button, a, select, summary, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    :where(button, a, summary) { transition: color var(--motion), background-color var(--motion), border-color var(--motion), opacity var(--motion); }
+    :where(button):active:not(:disabled) { transform: translateY(1px); }
+    [hidden] { display: none !important; }
+    h1,h2,h3,h4,h5,p { text-wrap: pretty; }
+    h1,h2,h3,h4,h5 { font-weight: 600; }
+    .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    .skip-link { position:fixed;top:8px;left:240px;z-index:50;padding:8px 16px;background:var(--surface);border-radius:8px;transform:translateY(-160%); }
+    .skip-link:focus { transform:none; }
 
-    .composer-model{color:#657c6f;font-size:12px;padding-left:9px;border-left:1px solid #dfe7e1}.composer-tip{margin-left:auto;font-size:11px;color:#a0ada5}.composer-spacer{display:none}.tool-toggle{font-weight:500;color:#6a7d71}.message.assistant .bubble{font-size:14px;line-height:1.85;white-space:normal}.message.assistant .bubble p{margin:0 0 12px}.message.assistant .bubble p:last-child{margin-bottom:0}.message.assistant .bubble ul,.message.assistant .bubble ol{margin:6px 0 14px;padding-left:22px}.message.assistant .bubble li{margin:4px 0}.message.assistant .bubble h3{font-size:14px;margin:18px 0 8px;color:#244c3b}.message.assistant .bubble h3:first-child{margin-top:0}.message.assistant .bubble code{background:#eff4f1;border-radius:4px;padding:2px 4px;font-size:.9em}.message.assistant .bubble table{margin:12px 0;font-size:12px}.message.pending .bubble{color:var(--ink);display:block}.pending-status{display:flex;align-items:center;gap:9px;color:#7c8f83}.stream-content>p:last-child{display:inline;margin-bottom:0}.stream-content:after{content:"";display:inline-block;width:2px;height:.95em;margin-left:3px;background:#648b71;vertical-align:-.08em;animation:breathe 1.2s ease-in-out infinite}.thinking-dot{width:6px;height:6px;border-radius:50%;background:#548e72;box-shadow:0 0 0 4px #548e7212;animation:breathe 1.6s ease-in-out infinite}.pending-steps{font-size:11px;color:#819187;margin-top:7px}.pending-steps div{padding:3px 0}.pending-steps .done{color:#46765a}@keyframes breathe{50%{opacity:.4}}
-    @keyframes arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(300%)}}.step.active .step-dot:after{content:"";position:absolute;inset:0;border-radius:50%;background:#fff5;animation:sweep 1.6s ease-in-out infinite}
-    @media(max-width:1180px){.app-shell{grid-template-columns:206px minmax(500px,1fr) 275px}.conversation-body{padding-inline:34px}.composer-wrap{padding-inline:34px}.starter-list{grid-template-columns:1fr}.starter{min-height:0}.starter span:last-child{display:none}}
-    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+    /* The canvas stays quiet; orange belongs to actions and model comparison. */
+    .app-shell { height:100dvh;min-height:620px;display:grid;grid-template-columns:224px minmax(0,1fr) 0;overflow:hidden;background:var(--canvas); }
+    .app-shell.inspector-open { grid-template-columns:224px minmax(0,1fr) 304px; }
+    .rail { min-width:0;min-height:0;display:flex;flex-direction:column;padding:24px 12px 16px;background:var(--nav);border-right:1px solid var(--line); }
+    .brand { display:flex;align-items:center;gap:12px;padding:0 12px 32px; }
+    .brandmark { display:grid;place-items:center;width:32px;height:32px;flex:none;color:var(--accent); }
+    .brandmark svg { width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .brand-name { display:block;font-size:16px;font-weight:600;line-height:24px;letter-spacing:-.025em; }
+    .brand-sub { display:block;font-size:12px;color:var(--muted);line-height:20px; }
+    .new-task { display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:8px 12px;border:1px solid #d7d2c7;border-radius:8px;background:transparent;color:var(--ink);font-size:14px;font-weight:600;text-align:left; }
+    .new-task:hover { background:var(--surface);border-color:#c6bbae; }
+    .new-task svg { color:var(--accent); }
+    .new-task svg,.rail-icon svg { width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
+    .rail-section { margin-top:32px;padding:0 12px 12px;color:var(--muted);font-size:12px; }
+    .session-list { flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:#d2cdc1 transparent; }
+    .session-item { display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:12px;border:0;border-radius:8px;background:transparent;color:#625e55;text-align:left;font-size:14px;line-height:20px; }
+    .session-item:hover { background:#e8e5dc; }
+    .session-item.active { background:#e5e1d7;color:var(--ink); }
+    .session-item.active .rail-icon { color:var(--accent); }
+    .rail-icon { display:grid;place-items:center;flex:none;color:#8b857a; }
+    .session-title { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .session-empty { padding:0 12px;color:var(--muted);font-size:14px; }
+    .rail-footer { padding:16px 12px 0;border-top:1px solid #e0dbd0; }
+    .model-line { display:flex;align-items:center;gap:8px;font-size:12px;color:#57534b;overflow-wrap:anywhere; }
+    .model-dot,.task-state-dot { width:6px;height:6px;border-radius:50%;background:#9b9589;flex:none; }
+    .model-dot.ready { background:var(--success); }
+    .model-dot.unavailable { background:var(--warning); }
+    .rail-caption { margin-top:8px;font-size:12px;line-height:20px;color:#837d72; }
+
+    .chat-panel { display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--canvas); }
+    .chat-header { display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px;min-height:64px;padding:0 32px;border-bottom:1px solid var(--divider); }
+    .header-title { min-width:0; }
+    .header-kicker { display:none; }
+    .chat-header h1 { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0;color:#555047;font-size:14px;line-height:24px;font-weight:500;max-width:600px; }
+    .header-meta { display:flex;align-items:center;gap:16px;flex:none;font-size:12px;color:var(--muted); }
+    .engine-pill { color:#80796e;font-size:12px;white-space:nowrap; }
+    .task-short { display:none; }
+    .inspector-toggle { display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:#6c655a;font-size:12px;white-space:nowrap; }
+    .inspector-toggle svg,.icon-button svg { width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round; }
+    .inspector-toggle:hover,.inspector-toggle[aria-expanded=true] { color:var(--ink);background:#eeeae1;border-color:#d8d1c4; }
+    .conversation-body { display:flex;flex:1;min-height:0;flex-direction:column;gap:24px;overflow:auto;scrollbar-width:thin;scrollbar-color:#d9d3c8 transparent;padding:40px 40px 48px;scroll-padding-top:32px; }
+    .conversation-body>*,.composer-wrap>* { width:100%;max-width:880px;margin-left:auto;margin-right:auto; }
+    #messages { display:flex;flex-direction:column;gap:40px; }
+    .message { display:flex;align-items:flex-start;gap:12px;scroll-margin-top:32px; }
+    .message.user { justify-content:flex-end; }
+    .message.user .avatar { display:none; }
+    .message-content { min-width:0;width:100%; }
+    .message.user .message-content { max-width:85%;width:fit-content; }
+    .avatar { width:24px;height:28px;display:grid;place-items:center;flex:none;color:var(--accent); }
+    .avatar svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .bubble { font-size:16px;line-height:1.85;overflow-wrap:anywhere; }
+    .message.user .bubble { white-space:pre-wrap;padding:12px 16px;background:#eeeae1;border:1px solid #e7e1d6;border-radius:16px 16px 4px 16px; }
+    .message.assistant .bubble { color:var(--ink);padding:0; }
+    .bubble p { margin:0 0 16px; }
+    .bubble p:last-child { margin-bottom:0; }
+    .bubble ul,.bubble ol { margin:12px 0 16px;padding-left:24px; }
+    .bubble li { margin:8px 0; }
+    .bubble h3 { font-size:18px;line-height:28px;margin:24px 0 12px; }
+    .bubble h3:first-child { margin-top:0; }
+    .bubble strong { font-weight:600; }
+    .bubble code { padding:2px 4px;background:#eeeae1;border-radius:4px;font-size:14px; }
+    .message time { display:block;color:#958c7f;font-size:12px;line-height:20px;margin-top:8px; }
+    .message.user time { text-align:right; }
+    .message.error .bubble { color:var(--danger); }
+    .message-results { width:100%;margin-top:24px; }
+    .message-tools { margin-top:12px; }
+    .tool-history { padding:0;border:0;margin:0; }
+    .tool-history summary { display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;font-size:12px;font-weight:400;color:#80796c;padding:4px 0; }
+    .tool-history summary:after { content:'⌄';font-size:14px; }
+    .tool-history summary::-webkit-details-marker { display:none; }
+    .tool-history summary svg { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5; }
+    .tool-history>div { margin:8px 0;padding:0 0 0 20px; }
+    .tool-history p { font-size:12px;color:var(--muted);margin:8px 0; }
+
+    .empty-conversation { display:flex;flex:1;flex-direction:column;justify-content:center;padding-bottom:40px; }
+    .empty-symbol { color:var(--accent);width:40px;height:40px;display:grid;place-items:center;margin-bottom:24px; }
+    .empty-symbol svg { width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round; }
+    .empty-conversation h2 { margin:0 0 12px;font-size:30px;line-height:40px;font-weight:500;letter-spacing:-.02em; }
+    .empty-conversation p { margin:0;color:var(--muted);font-size:16px;line-height:28px;max-width:600px; }
+    .starter-label { margin:32px 0 12px;color:#8e8577;font-size:12px; }
+    .starter-list { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+    .starter { padding:16px;text-align:left;min-height:96px;background:transparent;border:1px solid #ded7ca;border-radius:12px;color:var(--ink); }
+    .starter:hover { background:var(--surface);border-color:#bfb1a0; }
+    .starter-icon { color:var(--accent);display:block;margin-bottom:8px; }
+    .starter-icon svg { width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .starter strong { display:block;font-size:14px;line-height:24px;font-weight:500; }
+    .starter span:last-child { color:var(--muted);font-size:12px;line-height:20px; }
+
+    .composer-wrap { position:relative;flex:none;padding:16px 40px 24px;background:var(--canvas); }
+    .composer { overflow:hidden;border:1px solid #d8d1c5;border-radius:16px;background:var(--surface);box-shadow:0 4px 16px #30251b08;transition:border-color var(--motion),box-shadow var(--motion); }
+    .composer:focus-within { border-color:#b7a590;box-shadow:0 4px 20px #30251b0c; }
+    .composer #prompt { display:block;width:100%;height:58px;min-height:58px;max-height:180px;resize:none;padding:16px 24px 8px;border:0;border-radius:0;outline:none;background:transparent;color:var(--ink);font-size:16px;line-height:28px;box-shadow:none; }
+    .composer #prompt:focus-visible { outline:none;box-shadow:none; }
+    .composer #prompt::placeholder { color:#9b9080; }
+    .composer-bottom { min-height:48px;display:flex;align-items:center;gap:12px;padding:4px 12px 12px 16px; }
+    .tool-toggle { display:flex;align-items:center;gap:8px;background:transparent;border:0;border-radius:8px;padding:8px;color:#756b5e;font-size:12px; }
+    .tool-toggle svg { width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .tool-toggle:hover,.tool-toggle[aria-expanded=true] { background:#f0ece3;color:var(--ink); }
+    .composer-model { font-size:12px;color:#6e6559; }
+    .composer-tip { margin-left:auto;font-size:12px;color:#a09585; }
+    .composer-spacer { display:none; }
+    .send { display:grid;place-items:center;width:32px;height:32px;flex:none;border:0;border-radius:8px;background:var(--accent);color:#fffefa; }
+    .send:hover:not(:disabled) { background:var(--accent-strong); }
+    .send svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
+    .send:disabled { background:#d8cfc0;opacity:1; }
+    .config-panel { position:absolute;left:50%;bottom:calc(100% - 8px);transform:translateX(-50%);z-index:15;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:calc(100% - 80px);max-width:880px;max-height:calc(100dvh - 240px);overflow:auto;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px #30251b20; }
+    .config-head { grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px; }
+    .config-head h2 { margin:0;font-size:18px;line-height:28px; }
+    .icon-button { display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted); }
+    .icon-button:hover { background:var(--inset); }
+    .field { min-width:0; }
+    .field-label { display:block;font-size:12px;color:var(--muted);margin-bottom:8px; }
+    .config-divider { grid-column:1/-1;border-top:1px solid var(--line);padding-top:16px;margin-top:8px;font-size:14px; }
+    .config-divider span { font-size:12px;color:var(--muted);margin-left:8px; }
+    .config-note { grid-column:1/-1;color:var(--muted);font-size:12px;line-height:20px;margin:0; }
+    .config-input,.picker-trigger { width:100%;min-height:40px;border:1px solid #ddd5c7;border-radius:8px;padding:8px 12px;background:#fffefa;color:var(--ink);font-size:14px;line-height:20px; }
+    .config-input:focus { outline:2px solid #d3ae95;outline-offset:2px; }
+    .config-input:disabled { background:var(--inset);color:#a69b8b; }
+    .picker { position:relative; }
+    .picker-trigger { display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left; }
+    .picker-trigger:hover { border-color:#b9a58e; }
+    .picker-value { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .picker-chevron { width:6px;height:6px;flex:none;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(45deg); }
+    .picker-menu { position:absolute;z-index:20;top:calc(100% + 4px);left:0;right:0;max-height:200px;overflow:auto;border:1px solid #d6cdbf;border-radius:8px;background:var(--surface);padding:4px;box-shadow:0 8px 24px #30251b15; }
+    .picker-option { display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;border-radius:4px;padding:8px;text-align:left;background:transparent;color:var(--ink);font-size:12px;line-height:20px; }
+    .picker-option:hover,.picker-option[aria-selected=true] { background:var(--inset);color:var(--accent-strong); }
+    .notice { margin-top:12px;padding:12px 16px;border:1px solid var(--line);border-radius:8px;background:#f0ede4;color:#796a52;font-size:14px;line-height:24px; }
+    .notice.error { background:#f8eee9;color:var(--danger);border-color:#ead5ca; }
+
+    /* Each response owns its result. The data, not another frame, is the focus. */
+    .analysis-result,.details { width:100%;overflow:hidden;border:1px solid #dfd9cd;border-radius:16px;background:var(--surface); }
+    .result-cover { display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #efebe2; }
+    .result-emblem { display:grid;place-items:center;color:var(--accent);width:24px;height:24px;flex:none; }
+    .result-emblem svg,.tile-icon svg,.algorithm-order svg,.empty-result-symbol svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round; }
+    .result-cover h2 { margin:0;font-size:16px;line-height:24px;font-weight:600; }
+    .result-cover p { font-size:12px;color:var(--muted);margin:4px 0 0; }
+    .result-state { display:flex;align-items:center;gap:8px;margin-left:auto;color:#7e786c;font-size:12px;white-space:nowrap; }
+    .result-state:before { content:'';width:4px;height:4px;border-radius:50%;background:var(--success); }
+    .result-state.caution { color:var(--warning); }
+    .result-state.caution:before { background:var(--warning); }
+    .result-tabs { display:flex;align-items:center;gap:24px;padding:0;margin:0 24px;border-bottom:1px solid var(--divider); }
+    .result-tabs button { position:relative;background:transparent;border:0;border-radius:0;padding:16px 0;color:var(--muted);font-size:14px;line-height:20px;white-space:nowrap; }
+    .result-tabs button[aria-selected=true] { color:var(--accent-strong); }
+    .result-tabs button[aria-selected=true]:after { content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent); }
+    .result-tabs button:hover { color:var(--ink); }
+    .result-tabs button:focus-visible { outline:2px solid #d5ac93;outline-offset:4px;border-radius:4px; }
+    .result-view { padding:24px; }
+    .result-bottom { padding:0 24px; }
+    .analysis-lead { margin:0 0 24px; }
+    .lead-kicker { display:block;color:var(--muted);font-size:12px;line-height:20px; }
+    .analysis-lead h3 { margin:4px 0 8px;color:var(--ink);font-size:24px;line-height:32px;font-weight:500; }
+    .analysis-lead p { color:var(--muted);font-size:14px;line-height:24px;margin:0; }
+    .overview-intro { display:flex;gap:12px;align-items:center;margin-bottom:24px; }
+    .completion-mark { display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:14px; }
+    .overview-intro h3 { font-size:24px;line-height:32px;font-weight:500;margin:0; }
+    .capability-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:32px; }
+    .capability-tile { position:relative;min-width:0;display:flex;flex-direction:column;align-items:flex-start;padding:16px;text-align:left;border:1px solid #e7e0d4;border-radius:12px;background:var(--inset); }
+    .capability-tile:hover { background:#eee8dc;border-color:#c7b7a3; }
+    .tile-icon { color:var(--accent);margin-bottom:16px;height:20px; }
+    .tile-title { color:var(--muted);font-size:14px;line-height:24px; }
+    .tile-value { display:block;font-size:30px;line-height:40px;margin:8px 0;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap; }
+    .tile-value small { font-size:12px;line-height:20px;color:var(--muted); }
+    .tile-note { font-size:12px;line-height:20px;color:#807667; }
+    .tile-open { position:absolute;right:16px;top:16px;color:#a28e77;font-size:18px; }
+    .sample-summary { padding-top:24px;border-top:1px solid var(--divider); }
+    .section-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px; }
+    .section-heading h3 { font-size:14px;line-height:24px;margin:0; }
+    .section-heading>span { color:var(--muted);font-size:12px;line-height:20px; }
+    .split-track { display:flex;gap:4px;height:6px;overflow:hidden;border-radius:4px; }
+    .split-track i { display:block;height:100%; }
+    .split-track .train,.split-labels .train { background:#bb7257; }
+    .split-track .validation,.split-labels .validation { background:#b5a18a; }
+    .split-track .test,.split-labels .test { background:#dad0c0; }
+    .split-labels { display:flex;flex-wrap:wrap;gap:24px;margin-top:12px;font-size:12px;color:var(--muted); }
+    .split-labels span { display:flex;align-items:center;gap:8px; }
+    .split-labels i { width:6px;height:6px;border-radius:2px; }
+    .split-labels strong { color:#534b40;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums; }
+
+    .model-comparisons,.cluster-algorithms { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px; }
+    .model-comparison { min-width:0; }
+    .model-comparison+.model-comparison,.cluster-method+.cluster-method { padding-left:32px;border-left:1px solid var(--divider); }
+    .model-comparison-head,.cluster-method-head { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px; }
+    .model-comparison-head>div { display:flex;align-items:center;gap:8px; }
+    .model-comparison h4,.cluster-method h4 { font-size:14px;line-height:24px;margin:0;font-weight:600; }
+    .algorithm-order { display:grid;place-items:center;color:#a38d79; }
+    .algorithm-order svg { width:16px;height:16px; }
+    .prediction-label { color:var(--muted);font-size:12px;white-space:nowrap; }
+    .probability-value { font-size:48px;line-height:1.15;font-weight:500;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--accent);margin-bottom:24px; }
+    .secondary-model .probability-value { color:#756452; }
+    .probability-track { height:6px;background:#eee9df;position:relative;border-radius:4px;margin-bottom:40px; }
+    .probability-track>i { display:block;height:100%;background:#c57b5c;border-radius:4px; }
+    .secondary-model .probability-track>i { background:#b5a18a; }
+    .threshold-mark { position:absolute;top:-4px;bottom:-4px;width:1px;background:#9d8e7a; }
+    .threshold-mark>span { position:absolute;left:0;top:16px;transform:translateX(-30%);font-size:12px;line-height:20px;color:var(--muted);white-space:nowrap; }
+    .model-small-metrics { display:flex;gap:16px;flex-wrap:wrap;font-size:12px;line-height:20px;color:var(--muted); }
+    .model-small-metrics strong { display:block;font-size:16px;line-height:28px;color:#4f483c;font-weight:500;font-variant-numeric:tabular-nums; }
+    .profile-strip { display:flex;align-items:center;gap:32px;padding:16px;margin-bottom:24px;border:0;border-radius:8px;background:var(--inset); }
+    .profile-strip>div { min-width:0; }
+    .profile-strip strong { display:block;font-size:24px;line-height:32px;color:#554b3d;font-weight:500;font-variant-numeric:tabular-nums; }
+    .profile-strip span { color:var(--muted);font-size:12px;line-height:20px; }
+    .profile-genres { margin-left:auto;max-width:48%; }
+    .genre-tags { display:flex;gap:8px;flex-wrap:wrap; }
+    .genre-tags>span { display:inline-block;background:#f0ece3;border:0;border-radius:4px;padding:4px 8px;color:#81715e;font-size:12px;line-height:20px; }
+    .cluster-method { min-width:0; }
+    .cluster-method-head>span { font-size:12px;color:var(--muted);white-space:nowrap; }
+    .cluster-method-head strong { color:#655b4e;font-weight:500; }
+    .group-row { display:flex;align-items:center;gap:12px;margin:0 0 24px; }
+    .group-symbol { display:grid;place-items:center;width:24px;height:24px;background:color-mix(in srgb,var(--group-color) 10%,var(--surface));color:var(--group-color);font-size:12px;border-radius:4px;flex:none; }
+    .group-description { min-width:0;flex:1; }
+    .group-name { font-size:14px;line-height:24px;color:#655948; }
+    .group-size-track { height:4px;overflow:hidden;border-radius:4px;background:#f0eadd;margin-top:8px; }
+    .group-size-track i { display:block;height:100%;border-radius:4px; }
+    .group-count { display:flex;align-items:flex-end;flex-direction:column;gap:4px; }
+    .group-count strong { font-size:16px;line-height:24px;font-weight:500;font-variant-numeric:tabular-nums; }
+    .group-count span { color:var(--muted);font-size:12px;line-height:20px; }
+    .user-group { display:flex;align-items:center;gap:16px;margin:24px 0 16px; }
+    .user-group-number { font-size:36px;line-height:40px;color:var(--group-color);min-width:40px; }
+    .user-group h5 { font-size:18px;line-height:28px;font-weight:500;margin:4px 0; }
+    .user-group p { font-size:12px;line-height:20px;color:var(--muted);margin:4px 0 0; }
+    .segment-summary { font-size:14px;line-height:24px;color:#756a5c;margin:16px 0 0; }
+    .segment-evidence h5 { font-size:14px;margin:16px 0 8px; }
+    .segment-evidence p { color:var(--muted);font-size:14px;line-height:24px;margin:8px 0; }
+
+    .compression-summary { margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--divider); }
+    .compression-value { display:flex;align-items:baseline;gap:16px;font-size:48px;line-height:1.2;color:#4b4133;font-variant-numeric:tabular-nums; }
+    .compression-value>span { font-size:30px;line-height:36px;color:#b6a58e; }
+    .compression-value>small { font-size:14px;line-height:24px;color:var(--muted); }
+    .retention-comparison { margin-bottom:24px; }
+    .comparison-row { margin-bottom:16px; }
+    .comparison-row:last-child { margin-bottom:0; }
+    .comparison-line { display:flex;justify-content:space-between;gap:12px;margin-bottom:8px; }
+    .comparison-line>span { font-size:14px;line-height:24px;color:#756957; }
+    .comparison-line>strong { font-size:18px;line-height:28px;font-weight:500;color:#5e4a36;font-variant-numeric:tabular-nums; }
+    .comparison-track { height:6px;overflow:hidden;border-radius:4px;background:#f0ebe0; }
+    .comparison-track i { display:block;height:100%;border-radius:4px;background:#c07857; }
+    .comparison-track i.secondary { background:#b7a288; }
+    .comparison-note { display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:20px; }
+    .projection-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px; }
+    .projection-card { min-width:0;border:1px solid #e8e1d5;border-radius:12px;overflow:hidden;background:transparent; }
+    .projection-heading { display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 16px 0; }
+    .projection-heading h4 { margin:0;font-size:16px;line-height:24px; }
+    .projection-heading span { color:var(--muted);font-size:12px;line-height:20px; }
+    .chart-shell { overflow:hidden; }
+    .chart-shell svg { display:block;width:100%;height:auto;margin:8px 0 0; }
+    .chart-axes { display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px;color:var(--muted);font-size:12px;line-height:20px; }
+    .chart-legend { display:flex;gap:12px;flex-wrap:wrap;padding:0 16px;color:var(--muted);font-size:12px;line-height:20px; }
+    .chart-legend span { display:flex;align-items:center;gap:4px; }
+    .chart-legend i { display:block;width:6px;height:6px;border-radius:50%; }
+    .chart-caption { padding:8px 16px 16px;font-size:12px;line-height:20px;color:var(--muted);margin:0; }
+    .reduction-evidence h4 { font-size:16px;line-height:24px;margin:24px 0 16px; }
+    .method-note { font-size:12px;line-height:20px;color:var(--muted); }
+    .result-disclosure { margin:24px 0 0;padding-top:12px;border-top:1px solid var(--divider); }
+    .result-disclosure summary { display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;color:#7c6d59;font-size:12px;line-height:24px;font-weight:400;cursor:pointer; }
+    .result-disclosure summary::-webkit-details-marker { display:none; }
+    .result-disclosure summary:after { content:'+';font-size:18px;line-height:24px;color:#9a876b; }
+    .result-disclosure[open]>summary:after { content:'−'; }
+    .result-disclosure>p { color:var(--muted);font-size:14px;line-height:24px;margin:16px 0; }
+    .source-evidence { margin-top:0; }
+    .evidence-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px 0; }
+    .evidence-grid>div { min-width:0; }
+    .evidence-grid span { display:block;margin-bottom:4px;font-size:12px;line-height:20px;color:var(--muted); }
+    .evidence-grid strong { font-size:14px;line-height:24px;font-weight:500;color:#5d5141;overflow-wrap:anywhere; }
+    .evidence-label { color:var(--muted);font-size:12px;margin:16px 0 0; }
+    .evidence-version { font-size:12px!important;color:var(--muted)!important;overflow-wrap:anywhere; }
+    .report-footer { display:flex;justify-content:flex-end;gap:12px;padding:16px 0;color:var(--muted);font-size:12px; }
+    .result-loading { color:var(--muted);font-size:14px;padding:16px 0; }
+    .empty-result { padding:8px 0 16px; }
+    .empty-result-symbol { display:grid;place-items:center;width:32px;height:32px;color:var(--warning);margin-bottom:16px; }
+    .empty-result h3 { font-size:20px;line-height:28px;font-weight:500;margin:0 0 12px; }
+    .empty-result p { font-size:14px;line-height:24px;color:var(--muted);margin:0; }
+    table { width:100%;border-collapse:collapse;font-size:12px;line-height:20px;font-variant-numeric:tabular-nums; }
+    th,td { padding:12px 8px;text-align:left;border-bottom:1px solid var(--divider); }
+    th { color:var(--muted);font-weight:500; }
+    .bubble table { font-size:14px;line-height:24px;margin:16px 0; }
+    .table-wrap { max-width:100%;overflow:auto; }
+    pre { white-space:pre-wrap;overflow-wrap:anywhere;background:var(--inset);padding:16px;border-radius:8px;color:#756755;font-size:12px;line-height:20px; }
+
+    .inspector { min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:#f5f3ed;border-left:1px solid var(--line); }
+    .inspector-head { display:flex;align-items:center;justify-content:space-between;height:64px;min-height:64px;padding:0 24px;border-bottom:1px solid var(--divider); }
+    .inspector-head h2 { margin:0;font-size:14px;line-height:24px;font-weight:500; }
+    .inspector-meta { display:none; }
+    .inspector-tabs { display:flex;gap:24px;height:48px;padding:0 24px;border-bottom:1px solid var(--divider); }
+    .inspector-tab { border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);padding:8px 0;font-size:14px;line-height:24px; }
+    .inspector-tab.active { color:var(--accent-strong);border-bottom-color:var(--accent); }
+    .sidebar { flex:1;min-height:0;overflow:auto;scrollbar-width:thin;padding:24px; }
+    .sidebar .panel { padding:0 0 24px;margin:0 0 24px;border-bottom:1px solid var(--line); }
+    .panel-head { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px; }
+    .panel-head h2 { margin:0;font-size:14px;line-height:24px;font-weight:600; }
+    .state-pill { display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;line-height:20px;white-space:nowrap; }
+    .state-pill:before { content:'';display:block;width:4px;height:4px;border-radius:50%;background:#9d9485; }
+    .state-pill.running:before,.state-pill.complete:before { background:var(--success); }
+    .state-pill.failed:before { background:var(--danger); }
+    .overview dl { display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px 16px;margin:0;font-size:12px;line-height:20px; }
+    .overview dt { color:var(--muted); }
+    .overview dd { color:#62594b;margin:0;min-width:0;overflow-wrap:anywhere; }
+    .progress-track { height:4px;border-radius:4px;overflow:hidden;background:#e7dfd1;margin:8px 0; }
+    .progress-fill { height:100%;background:#b78565;border-radius:4px; }
+    #progressLabel { color:var(--muted); }
+    .analysis-context { font-size:12px;line-height:20px;color:var(--muted); }
+    .context-row { display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0; }
+    .context-row strong { color:#695d4d;font-weight:500;overflow-wrap:anywhere; }
+    .source-picker { margin-top:16px; }
+    .source-picker label { display:block;margin-bottom:8px;font-size:12px; }
+    .source-picker select { width:100%;height:40px;border:1px solid #dcd3c4;border-radius:8px;background:var(--surface);padding:8px;color:#75654f;font-size:12px; }
+    .context-actions { margin-top:12px; }
+    .context-actions button { width:100%;padding:8px 12px;min-height:40px;border:1px solid #d7c7b6;border-radius:8px;background:transparent;color:var(--accent-strong);font-size:12px;line-height:20px; }
+    .context-actions button:hover:not(:disabled) { background:#eee4d8; }
+    .quality>summary { list-style:none;cursor:pointer; }
+    .quality>summary::-webkit-details-marker { display:none; }
+    .quality>summary:after { content:'⌄';color:#8d7b63; }
+    .quality-grid { display:flex;flex-direction:column;gap:0; }
+    .metric { position:relative;padding:16px 0;border-bottom:1px solid var(--divider); }
+    .metric:last-child { border:0; }
+    .metric-head { display:flex;align-items:center;gap:8px; }
+    .metric-icon { display:grid;place-items:center;width:16px;height:20px;color:#9e876c; }
+    .metric-icon svg { width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .metric-name { font-size:12px;line-height:20px;color:#6f604b; }
+    .metric-name-cn,.metric-help { display:none; }
+    .metric-value { display:inline-block;margin:8px 8px 0 24px;color:#5e4d37;font-size:24px;line-height:32px;font-weight:500;font-variant-numeric:tabular-nums; }
+    .metric-unit { color:var(--muted);font-size:12px; }
+    .metric-before,.metric-delta,.metric-pending { display:block;margin:4px 0 0 24px;color:var(--muted);font-size:12px;line-height:20px; }
+    .metric-delta.good { color:var(--success); }
+    .metric-delta.bad { color:var(--danger); }
+    .metric-detail { margin:12px 0 0 24px; }
+    .metric-detail summary { color:#8d7355;font-size:12px;cursor:pointer; }
+    .metric-detail-body { font-size:12px;line-height:20px;color:var(--muted);padding-top:8px; }
+    .evidence p { font-size:12px;line-height:20px;color:var(--muted); }
+    .evidence-links { display:flex;flex-direction:column;gap:8px; }
+    .evidence-links a,.evidence-links span { display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid #e1d8c8;border-radius:8px;background:transparent;color:#7c6346;font-size:12px;line-height:20px; }
+    .evidence-links a:hover { background:#f0e9dc;text-decoration:none; }
+    .evidence-links a:after { content:'↗'; }
+    .evidence-links span { color:#9f9483; }
+    .details { padding:24px; }
+    .details-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px; }
+    .detail-block { min-width:0; }
+    .detail-block h3 { font-size:16px;line-height:24px; }
+    .detail-block p,.detail-block li { color:var(--muted);font-size:14px;line-height:24px; }
+    .detail-block summary { color:var(--accent-strong);font-size:14px;line-height:24px;cursor:pointer; }
+    .version-line { color:var(--muted);font-size:12px;line-height:20px;overflow-wrap:anywhere;padding-top:16px;border-top:1px solid var(--line); }
+    .timeline { padding-left:16px;border-left:1px solid #ddcfbd; }
+    .step { display:flex;align-items:flex-start;gap:12px;min-height:64px; }
+    .step-dot { display:grid;place-items:center;width:20px;height:20px;border:1px solid #d5c5b0;border-radius:50%;font-size:12px;flex:none; }
+    .step.done .step-dot { background:var(--accent-soft);color:var(--accent-strong);border-color:#dbb79e; }
+    .step.active .step-dot { border-color:var(--accent); }
+    .step-title { font-size:14px;line-height:24px; }
+    .step-detail { margin:4px 0;color:var(--muted);font-size:12px;line-height:20px; }
+    .task-activity { padding:16px 24px;background:#f2ece0;border:1px solid #e0d4c0;border-radius:12px; }
+    .task-progress-line,.activity-head { display:flex;align-items:center;gap:8px;font-size:14px;line-height:24px; }
+    .task-progress-line strong { font-weight:500; }
+    .task-progress-line>span:last-child { margin-left:auto;font-size:12px;color:var(--muted); }
+    .task-progress-card p,.activity-detail { color:var(--muted);font-size:14px;line-height:24px;margin:12px 0; }
+    .task-progress-track { position:relative;height:4px;overflow:hidden;background:#e2d6c2;border-radius:4px; }
+    .task-progress-track i { display:block;height:100%;background:#c48059;border-radius:4px; }
+    .task-progress-track.indeterminate i { width:24%;animation:taskScan 2.4s cubic-bezier(.22,1,.36,1) infinite; }
+    .task-state-dot { background:var(--accent); }
+    .task-progress-card.failed { color:var(--danger); }
+    .pending-status { display:flex;align-items:center;gap:12px;color:#91806a;font-size:14px;line-height:28px; }
+    .thinking-dot { width:6px;height:6px;border-radius:50%;background:var(--accent);animation:breathe 1.5s cubic-bezier(.22,1,.36,1) infinite; }
+    .pending-steps { font-size:12px;line-height:24px;color:#98866f;margin-top:12px; }
+    .pending-steps div { padding:4px 0; }
+    .pending-steps .done { color:#8c7151; }
+    .stream-content>p:last-child { display:inline;margin-bottom:0; }
+    .stream-content:after { content:'';display:inline-block;width:2px;height:1em;margin-left:4px;background:var(--accent);vertical-align:-.1em;animation:breathe 1.2s cubic-bezier(.22,1,.36,1) infinite; }
+    @keyframes taskScan { from { transform:translateX(-100%); } to { transform:translateX(500%); } }
+    @keyframes breathe { 50% { opacity:.35; } }
+    @media (max-width:1400px) {
+      .app-shell { grid-template-columns:208px minmax(0,1fr) 0; }
+      .app-shell.inspector-open { grid-template-columns:208px minmax(0,1fr) 280px; }
+      .conversation-body { padding-left:32px;padding-right:32px; }
+      .composer-wrap { padding-left:32px;padding-right:32px; }
+      .config-panel { width:calc(100% - 64px); }
+      .model-comparison-head,.cluster-method-head { flex-wrap:wrap; }
+      .engine-pill { display:none; }
+      .probability-value { font-size:36px;line-height:40px; }
+    }
+    @media (max-width:1100px) {
+      .app-shell,.app-shell.inspector-open { grid-template-columns:184px minmax(0,1fr) 0; }
+      .brand { padding-left:8px;padding-right:8px;gap:8px; }
+      .brand-name { font-size:14px; }
+      .chat-header { padding-left:24px;padding-right:24px; }
+      .conversation-body { padding-left:24px;padding-right:24px; }
+      .composer-wrap { padding-left:24px;padding-right:24px; }
+      .config-panel { width:calc(100% - 48px); }
+      .inspector { position:fixed;top:64px;right:0;bottom:0;width:280px;z-index:20;box-shadow:-12px 0 32px #30251b12; }
+      .inspector-head { height:48px;min-height:48px; }
+      .model-comparisons,.cluster-algorithms { gap:24px; }
+      .model-comparison+.model-comparison,.cluster-method+.cluster-method { padding-left:24px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      *,*:before,*:after { animation:none!important;transition:none!important;scroll-behavior:auto!important; }
+    }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#prompt">跳到输入框</a>
 <div class="app-shell">
   <aside class="rail" aria-label="会话导航">
-    <div class="brand"><span class="brandmark" aria-hidden="true">M</span><span><span class="brand-name">MovieLens Agent</span><span class="brand-sub">DATA & ANALYSIS</span></span></div>
+    <div class="brand"><span class="brandmark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4M10 9l4 3-4 3z"/></svg></span><span><span class="brand-name">MovieLens Agent</span><span class="brand-sub">电影数据分析</span></span></div>
     <button id="newTask" class="new-task" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>新建对话</button>
     <div class="rail-section">最近会话</div>
     <nav id="sessionList" class="session-list" aria-label="最近会话"><p class="session-empty">还没有会话。发送第一条问题后会显示在这里。</p></nav>
     <div class="rail-footer"><div class="model-line"><span id="modelDot" class="model-dot" aria-hidden="true"></span><span id="modelLabel">DeepSeek 状态待确认</span></div><div id="modelNote" class="rail-caption">实际查询将由 Agent 调用已登记工具。</div></div>
   </aside>
   <main class="chat-panel">
-    <header class="chat-header"><div class="header-title"><span class="header-kicker">MOVIELENS / WORKSPACE</span><h1 id="conversationTitle">新对话</h1></div><div class="header-meta"><span id="engineBadge" class="engine-pill">数据引擎待确认</span><span id="headerTask" class="task-short">尚无任务</span></div></header>
+    <header class="chat-header"><div class="header-title"><span class="header-kicker">MOVIELENS / WORKSPACE</span><h1 id="conversationTitle">新对话</h1></div><div class="header-meta"><span id="engineBadge" class="engine-pill">数据引擎待确认</span><span id="headerTask" class="task-short">尚无任务</span><button id="inspectorToggle" class="inspector-toggle" type="button" aria-label="切换工作记录" aria-expanded="false" aria-controls="inspector"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg>工作记录</button></div></header>
     <div id="conversationBody" class="conversation-body" role="log" aria-live="polite">
-      <div id="emptyConversation" class="empty-conversation"><span class="empty-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 18 4-12 4 8 4-6 4 10M3 20h18"/></svg></span><h2>从一个问题开始分析</h2><p>让 Agent 组织清洗、分类、聚类与降维工具。直接说出你的目标，或让我解释已经完成的结果。</p><div class="starter-label">可以这样开始</div><div class="starter-list"><button class="starter" type="button" data-prompt="先看看我们现有的数据和分析结果，告诉我有什么值得关注。"><span class="starter-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M16 15l2 2 3-4"/></svg></span><strong>看看已有结果</strong><span>让 Agent 读取报告并解读</span></button><button class="starter" type="button" data-prompt="帮我判断 635 号用户会不会喜欢 1 号电影，比较一下两个模型。"><span class="starter-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5h16M7 15l4-4 3 2 5-6"/></svg></span><strong>预测高分</strong><span>对照模型的概率与评价</span></button><button class="starter" type="button" data-prompt="这些用户大致可以分成哪些群体？根据现有结果解释一下。"><span class="starter-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="15" cy="6" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="18" cy="17" r="2"/></svg></span><strong>理解用户群体</strong><span>查看聚类归属与群体摘要</span></button></div></div>
+      <div id="emptyConversation" class="empty-conversation"><span class="empty-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 18 4-12 4 8 4-6 4 10M3 20h18"/></svg></span><h2>从电影评分，了解观影偏好</h2><p>预测高分、探索用户群体，或继续追问已有结果。</p><div class="starter-label">可以这样开始</div><div class="starter-list"><button class="starter" type="button" data-prompt="先看看我们现有的数据和分析结果，告诉我有什么值得关注。"><span class="starter-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M16 15l2 2 3-4"/></svg></span><strong>看看已有结果</strong><span>让 Agent 读取报告并解读</span></button><button class="starter" type="button" data-prompt="帮我判断 635 号用户会不会喜欢 1 号电影，比较一下两个模型。"><span class="starter-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5h16M7 15l4-4 3 2 5-6"/></svg></span><strong>预测高分</strong><span>对照模型的概率与评价</span></button><button class="starter" type="button" data-prompt="这些用户大致可以分成哪些群体？根据现有结果解释一下。"><span class="starter-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="15" cy="6" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="18" cy="17" r="2"/></svg></span><strong>理解用户群体</strong><span>查看聚类归属与群体摘要</span></button></div></div>
       <div id="messages"></div>
       <div id="timeline" class="timeline" hidden></div>
       <div id="analysisActivity" class="task-activity" hidden></div>
       <div id="analysisResults" hidden></div>
       <section id="results" class="details" hidden aria-labelledby="resultsTitle"><div class="panel-head"><h2 id="resultsTitle">清洗结果与评估依据</h2></div><div class="details-grid"><div class="detail-block"><h3>数据量变化</h3><div id="counts" class="table-wrap"></div><h3 style="margin-top:22px">异常处置</h3><div id="issues"></div></div><div class="detail-block"><h3>结果解释</h3><div id="explanations"></div><details><summary>评分公式与局限</summary><div id="methods"></div><div id="limitations"></div></details><details><summary>清洗数据样例</summary><pre id="samples">正在读取…</pre></details></div></div><p id="versions" class="version-line"></p></section>
     </div>
-    <div class="composer-wrap"><div class="composer"><label for="prompt" class="sr-only">向 Agent 提问</label><textarea id="prompt" aria-label="向 Agent 提问" placeholder="描述你想做的事，或问问现有结果…"></textarea><div class="composer-bottom"><button id="configToggle" class="tool-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M8 5v4M15 10v4M11 15v4"/></svg>选项</button><span class="composer-model">DeepSeek</span><span class="composer-tip">↵ 发送</span><span class="composer-spacer"></span><button id="send" class="send" type="button" aria-label="发送消息"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div></div><div id="configPanel" class="config-panel" hidden><div class="field"><span class="field-label">数据版本</span><div class="picker" data-select="dataVersion"><select id="dataVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择数据版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="数据版本" hidden></div></div></div><div class="field"><span class="field-label">清洗规则</span><div class="picker" data-select="ruleVersion"><select id="ruleVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择规则版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="清洗规则" hidden></div></div></div><div class="field"><span class="field-label">评分配置</span><div class="picker" data-select="scoreConfig"><select id="scoreConfig" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择评分配置" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="评分配置" hidden></div></div></div><div class="config-divider">分析配置 <span>留空使用已登记默认值</span></div><div class="field"><label class="field-label" for="sourceTaskInput">来源清洗任务 ID</label><input id="sourceTaskInput" class="config-input" type="text" maxlength="12" placeholder="可输入 12 位任务 ID"></div><div class="field"><label class="field-label" for="clusterCount">群体数</label><input id="clusterCount" class="config-input" type="number" min="2" max="10" placeholder="默认配置"></div><div class="field"><label class="field-label" for="targetDimensions">目标维数</label><input id="targetDimensions" class="config-input" type="number" min="2" max="10" placeholder="默认 2 维"></div><div class="field"><label class="field-label" for="informationThreshold">信息保留阈值</label><input id="informationThreshold" class="config-input" type="number" min="0.5" max="0.99" step="0.01" placeholder="与目标维数二选一"></div><div class="field"><label class="field-label" for="userIds">指定 UserID</label><input id="userIds" class="config-input" type="text" placeholder="如 1, 42, 126"></div><p class="config-note">指定维数与信息保留阈值二选一。UserID 只筛选已发布模型的查询结果或坐标，不会据此重新训练；调整群体数或维数将创建全量分析任务。二维图显示前两维。</p></div><div id="notice" class="notice" hidden></div></div>
+    <div class="composer-wrap"><div class="composer"><label for="prompt" class="sr-only">向 Agent 提问</label><textarea id="prompt" aria-label="向 Agent 提问" placeholder="描述你想做的事，或问问现有结果…"></textarea><div class="composer-bottom"><button id="configToggle" class="tool-toggle" type="button" aria-expanded="false" aria-controls="configPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M8 5v4M15 10v4M11 15v4"/></svg>选项</button><span class="composer-model">DeepSeek</span><span class="composer-tip">↵ 发送</span><span class="composer-spacer"></span><button id="send" class="send" type="button" aria-label="发送消息"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div></div><div id="configPanel" class="config-panel" aria-label="任务选项" hidden><div class="config-head"><h2>任务选项</h2><button id="configClose" class="icon-button" type="button" aria-label="关闭任务选项"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="field"><span class="field-label">数据版本</span><div class="picker" data-select="dataVersion"><select id="dataVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择数据版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="数据版本" hidden></div></div></div><div class="field"><span class="field-label">清洗规则</span><div class="picker" data-select="ruleVersion"><select id="ruleVersion" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择规则版本" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="清洗规则" hidden></div></div></div><div class="field"><span class="field-label">评分配置</span><div class="picker" data-select="scoreConfig"><select id="scoreConfig" class="sr-only" aria-hidden="true" tabindex="-1"></select><button class="picker-trigger" type="button" aria-label="选择评分配置" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value">读取中…</span><span class="picker-chevron" aria-hidden="true"></span></button><div class="picker-menu" role="listbox" aria-label="评分配置" hidden></div></div></div><div class="config-divider">分析配置 <span>留空使用已登记默认值</span></div><div class="field"><label class="field-label" for="sourceTaskInput">来源清洗任务 ID</label><input id="sourceTaskInput" class="config-input" type="text" maxlength="12" placeholder="可输入 12 位任务 ID"></div><div class="field"><label class="field-label" for="clusterCount">群体数</label><input id="clusterCount" class="config-input" type="number" min="2" max="10" placeholder="默认配置"></div><div class="field"><label class="field-label" for="targetDimensions">目标维数</label><input id="targetDimensions" class="config-input" type="number" min="2" max="10" placeholder="默认 2 维"></div><div class="field"><label class="field-label" for="informationThreshold">信息保留阈值</label><input id="informationThreshold" class="config-input" type="number" min="0.5" max="0.99" step="0.01" placeholder="与目标维数二选一"></div><div class="field"><label class="field-label" for="userIds">指定 UserID</label><input id="userIds" class="config-input" type="text" placeholder="如 1, 42, 126"></div><p class="config-note">指定维数与信息保留阈值二选一。UserID 只筛选已发布模型的查询结果或坐标，不会据此重新训练；调整群体数或维数将创建全量分析任务。二维图显示前两维。</p></div><div id="notice" class="notice" role="status" aria-live="polite" hidden></div></div>
   </main>
-  <aside class="inspector" aria-label="任务和产物"><div class="inspector-head"><h2>工作记录</h2><span class="inspector-meta">当前会话</span></div><div class="inspector-tabs"><button id="taskTab" class="inspector-tab active" type="button" aria-selected="true">任务</button><button id="filesTab" class="inspector-tab" type="button" aria-selected="false">产物</button></div><div class="sidebar"><div id="taskPane"><section class="panel overview" aria-labelledby="overviewTitle"><div class="panel-head"><h2 id="overviewTitle">执行状态</h2><span id="statusPill" class="state-pill">未开始</span></div><dl><dt>任务 ID</dt><dd id="taskId">—</dd><dt>执行引擎</dt><dd id="taskEngine">—</dd><dt>当前阶段</dt><dd id="currentStage">等待请求</dd><dt>整体进度</dt><dd><div class="progress-track" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill" class="progress-fill"></div></div><span id="progressLabel">0 / 4</span></dd></dl></section><section id="analysisContext" class="panel analysis-context"><div class="panel-head"><h2>分析任务</h2><span id="analysisState" class="state-pill">未开始</span></div><div class="context-row"><span>运行 ID</span><strong id="analysisTaskId">—</strong></div><div class="context-row"><span>阶段</span><strong id="analysisStage">等待请求</strong></div><p id="analysisHint">选择已完成的清洗任务，或在任务配置中输入任务 ID。</p><div class="source-picker"><label for="sourceTaskSelect">数据来源</label><select id="sourceTaskSelect"><option value="">读取已验证任务…</option></select></div><div class="context-actions"><button id="startAnalysis" type="button" disabled>启动迭代二分析</button></div></section><section class="panel quality" aria-labelledby="qualityTitle" hidden><div class="panel-head"><h2 id="qualityTitle">数据质量</h2><span id="qualityState" class="state-pill">等待结果</span></div><div id="scores" class="quality-grid"></div></section></div><div id="filesPane" hidden><section class="panel evidence" aria-labelledby="evidenceTitle"><div class="panel-head"><h2 id="evidenceTitle">结果与证据</h2><span id="evidenceState" class="state-pill">未生成</span></div><p id="evidenceHint">任务完成后在这里查看真实报告、数据样例与图表。</p><div id="evidenceLinks" class="evidence-links"><span>评估报告</span><span>产物清单</span><span>异常记录</span></div></section><section class="panel"><div class="panel-head"><h2>分析产物</h2><span id="analysisFilesState" class="state-pill">未生成</span></div><div id="analysisLinks" class="evidence-links"><span>分析报告</span><span>用户画像</span><span>模型评价</span></div></section></div></div></aside>
+  <aside id="inspector" class="inspector" aria-label="任务和产物" hidden><div class="inspector-head"><h2>工作记录</h2><button id="inspectorClose" class="icon-button" type="button" aria-label="收起工作记录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="inspector-tabs"><button id="taskTab" class="inspector-tab active" type="button" aria-selected="true">任务</button><button id="filesTab" class="inspector-tab" type="button" aria-selected="false">产物</button></div><div class="sidebar"><div id="taskPane"><section class="panel overview" aria-labelledby="overviewTitle"><div class="panel-head"><h2 id="overviewTitle">执行状态</h2><span id="statusPill" class="state-pill">未开始</span></div><dl><dt>任务 ID</dt><dd id="taskId">—</dd><dt>执行引擎</dt><dd id="taskEngine">—</dd><dt>当前阶段</dt><dd id="currentStage">等待请求</dd><dt>整体进度</dt><dd><div class="progress-track" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill" class="progress-fill"></div></div><span id="progressLabel">0 / 4</span></dd></dl></section><section id="analysisContext" class="panel analysis-context"><div class="panel-head"><h2>分析任务</h2><span id="analysisState" class="state-pill">未开始</span></div><div class="context-row"><span>运行 ID</span><strong id="analysisTaskId">—</strong></div><div class="context-row"><span>阶段</span><strong id="analysisStage">等待请求</strong></div><p id="analysisHint">选择已完成的清洗任务，或在任务配置中输入任务 ID。</p><div class="source-picker"><label for="sourceTaskSelect">数据来源</label><select id="sourceTaskSelect"><option value="">读取已验证任务…</option></select></div><div class="context-actions"><button id="startAnalysis" type="button" disabled>启动迭代二分析</button></div></section><details class="panel quality" aria-labelledby="qualityTitle" hidden><summary class="panel-head"><h2 id="qualityTitle">数据质量</h2><span id="qualityState" class="state-pill">等待结果</span></summary><div id="scores" class="quality-grid"></div></details></div><div id="filesPane" hidden><section class="panel evidence" aria-labelledby="evidenceTitle"><div class="panel-head"><h2 id="evidenceTitle">结果与证据</h2><span id="evidenceState" class="state-pill">未生成</span></div><p id="evidenceHint">任务完成后在这里查看真实报告、数据样例与图表。</p><div id="evidenceLinks" class="evidence-links"><span>评估报告</span><span>产物清单</span><span>异常记录</span></div></section><section class="panel"><div class="panel-head"><h2>分析产物</h2><span id="analysisFilesState" class="state-pill">未生成</span></div><div id="analysisLinks" class="evidence-links"><span>分析报告</span><span>用户画像</span><span>模型评价</span></div></section></div></div></aside>
 </div>
 <script>
   let taskId = null, timer = null, lastStatus = null;
@@ -110,23 +497,42 @@
   let sessions = [], activeSessionId = null, analysisTaskId = null, analysisTimer = null, lastAnalysisStatus = null, preferredSourceTaskId = null;
   try { const saved = JSON.parse(localStorage.getItem(sessionStoreKey) || '[]'); if (Array.isArray(saved)) sessions = saved.filter(x => x && typeof x.id === 'string').slice(0, 30); } catch (_) {}
   function currentSession() { return sessions.find(x => x.id === activeSessionId); }
-  function saveSessions() { try { localStorage.setItem(sessionStoreKey, JSON.stringify(sessions.slice(0, 30))); } catch (_) {} }
+  function saveSessions() {
+    try { localStorage.setItem(sessionStoreKey, JSON.stringify(sessions.slice(0, 30))); }
+    catch (_) { notice('浏览器会话存储空间不足，本次结果暂时只保留在当前页面。',true); }
+  }
+  const newMessageId=()=>crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);
+  function normalizeSession(session) {
+    session.messages=(session.messages || []).filter(message=>message && ['user','assistant'].includes(message.role));
+    for(const message of session.messages)message.id ||= newMessageId();
+    // V2 stored just one result. Preserve that known snapshot on the final
+    // assistant turn; earlier responses never had structured data persisted.
+    if(session.lastResult && !session.messages.some(message=>message.analysis)) {
+      const message=[...session.messages].reverse().find(message=>message.role==='assistant');
+      if(message)message.analysis={taskId:session.analysisTaskId || null,results:Array.isArray(session.lastResult)?session.lastResult:[session.lastResult]};
+    }
+    session.lastResult=null;session.schemaVersion=3;return session;
+  }
   function sessionTitle(message) { return message.replace(/\s+/g, ' ').trim().slice(0, 34) || '新对话'; }
   function renderSessionList() {
     $('sessionList').innerHTML = sessions.length ? sessions.map(item => `<button type="button" class="session-item ${item.id === activeSessionId ? 'active' : ''}" data-session="${esc(item.id)}" title="${esc(item.title)}"><span class="rail-icon">${icon('chat')}</span><span class="session-title">${esc(item.title)}</span></button>`).join('') : '<p class="session-empty">还没有会话。发送第一条问题后会显示在这里。</p>';
     $('conversationTitle').textContent = currentSession()?.title || '新对话';
   }
   function createSession(message) {
-    const entry = {id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()), title: sessionTitle(message), updated: Date.now(), taskId: null, analysisTaskId: null, messages: [], lastResult: null};
+    const entry = {id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()), title: sessionTitle(message), updated: Date.now(), taskId: null, analysisTaskId: null, messages: [], schemaVersion: 3};
     sessions.unshift(entry); activeSessionId = entry.id; saveSessions(); renderSessionList(); return entry;
   }
   function touchSession() { const session = currentSession(); if (!session) return; session.taskId = taskId; session.analysisTaskId = analysisTaskId; session.updated = Date.now(); sessions.sort((a,b) => b.updated-a.updated); saveSessions(); renderSessionList(); }
   function restoreSession(id) {
     const session = sessions.find(x => x.id === id); if (!session) return;
     resetView(false); activeSessionId = id; taskId = session.taskId || null; analysisTaskId = session.analysisTaskId || null;
-    for (const message of session.messages || []) addMessage(message.role, message.content, false, message.time);
-    if (!analysisTaskId && Array.isArray(session.lastResult)) session.lastResult.forEach(item=>renderAgentResult(item,true));
-    else if (!analysisTaskId && session.lastResult) renderAgentResult(session.lastResult);
+    normalizeSession(session);
+    for (const message of session.messages) {
+      const box=addMessage(message.role,message.content,false,message.time,message);
+      if(message.toolEvents?.length)renderToolEvents(message.toolEvents,box);
+      if(message.analysis)attachMessageResults(box,message);
+    }
+    saveSessions();
     renderSessionList(); if (taskId && [...$('sourceTaskSelect').options].some(option=>option.value===taskId)) $('sourceTaskSelect').value=taskId; updateStartAnalysisAvailability(); if (taskId) poll(); if (analysisTaskId) pollAnalysis();
   }
   function renderModelStatus(agent) {
@@ -168,11 +574,13 @@
       updateStartAnalysisAvailability();
     } catch (_) { $('sourceTaskSelect').innerHTML='<option value="">请在任务配置中输入任务 ID</option>'; updateStartAnalysisAvailability(); }
   }
-  function renderToolEvents(events) {
+  function renderToolEvents(events,box) {
     if(!Array.isArray(events) || !events.length)return;
     const states={completed:'已完成',complete:'已完成',queued:'已提交',running:'运行中',unavailable:'暂不可用',insufficient_history:'历史不足',failed:'失败'};
-    $('analysisActivity').hidden=false;
-    $('analysisActivity').innerHTML='<details class="tool-history"><summary>'+icon('activity')+'已调用 '+events.length+' 个工具</summary><div>'+events.map(event=>'<p>'+esc(toolLabels[event.tool] || event.tool || '工具')+' · '+esc(states[event.status] || event.status || '')+'</p>').join('')+'</div></details>';
+    if(!box)return;
+    const history=document.createElement('div');history.className='message-tools';
+    history.innerHTML='<details class="tool-history"><summary>'+icon('activity')+'已调用 '+events.length+' 个工具</summary><div>'+events.map(event=>'<p>'+esc(toolLabels[event.tool] || event.tool || '工具')+' · '+esc(states[event.status] || event.status || '')+'</p>').join('')+'</div></details>';
+    box.querySelector('.message-content').append(history);
   }
   function asText(value) { if (value === null || value === undefined || value === '') return '未记录'; if (typeof value === 'object') return JSON.stringify(value); return String(value); }
   function formatMetric(value) { if (typeof value !== 'number' || !Number.isFinite(value)) return asText(value); return Number.isInteger(value) ? String(value) : value.toFixed(3); }
@@ -180,8 +588,10 @@
   const resultNames={classification:'高分预测',clustering:'用户分群',reduction:'偏好降维',overview:'分析总览'};
   const algorithmNames={logistic_regression:'逻辑回归',decision_tree:'决策树',kmeans:'KMeans',agglomerative:'Ward 层次聚类',pca:'PCA',nmf:'NMF'};
   const genreNames={Action:'动作',Adventure:'冒险',Animation:'动画',"Children's":'儿童',Comedy:'喜剧',Crime:'犯罪',Documentary:'纪录片',Drama:'剧情',Fantasy:'奇幻','Film-Noir':'黑色电影',Horror:'恐怖',Musical:'歌舞',Mystery:'悬疑',Romance:'爱情','Sci-Fi':'科幻',Thriller:'惊悚',War:'战争',Western:'西部'};
-  let reportData=null, coordinateData=null, focusedResults=[], currentResultTab='overview', presentationTaskId=null;
-  const groupPalette=['#21765b','#bf9b62','#73969e','#92a977','#9690a8','#bd8674','#7c948c','#637f94'];
+  let reportData=null, coordinateData=null, presentationTaskId=null;
+  const resultViews=new Map(),analysisBundles=new Map();
+  let overviewViewController=null;
+  const groupPalette=['#b66b4d','#537c92','#987a3c','#7c8457','#8d7392','#a16f61','#5a8171','#5d7193'];
   const groupColor=id=>groupPalette[(Math.abs(parseInt(id,10)||0))%groupPalette.length];
   const algorithmName=name=>algorithmNames[name] || String(name || '算法未登记');
   const pct=value=>typeof value==='number' && Number.isFinite(value) ? (value*100).toFixed(1)+'%' : '未提供';
@@ -207,18 +617,25 @@
     const items=Array.isArray(result?.results)?result.results.filter(item=>item && typeof item==='object'):[];
     return items.flatMap(item=>item.result ? (['completed','complete'].includes(item.result.status)?(item.result.results || []).map(entry=>({...entry,user_id:item.user_id})): [{user_id:item.user_id,status:item.result.status,reason:item.result.reason}]):[item]);
   }
-  function renderScatter(rawPoints,caption){
+  function renderScatter(rawPoints,caption,totalCount){
     const source=Array.isArray(rawPoints)?rawPoints:Array.isArray(rawPoints?.points)?rawPoints.points:[];
     const points=source.map((item,index)=>{const pair=Array.isArray(item)?item:[item?.x ?? item?.coordinates?.[0],item?.y ?? item?.coordinates?.[1]];return {x:Number(pair[0]),y:Number(pair[1]),group:item?.cluster ?? item?.clusters?.kmeans ?? item?.group ?? 0,id:item?.user_id ?? index};}).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
     if(!points.length)return '<div class="empty-result">本次结果没有可展示的二维坐标。</div>';
     const sample=points.length<=700?points:Array.from({length:700},(_,i)=>points[Math.floor(i*(points.length-1)/699)]);
     const xs=sample.map(p=>p.x),ys=sample.map(p=>p.y),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    const px=x=>40+(x-minX)/(maxX-minX || 1)*570,py=y=>195-(y-minY)/(maxY-minY || 1)*170;
-    const grid=[25,82,138,195].map(y=>'<path d="M40 '+y+'H610"/>').join('')+[40,230,420,610].map(x=>'<path d="M'+x+' 25V195"/>').join('');
-    const circles=sample.map(p=>'<circle cx="'+px(p.x).toFixed(1)+'" cy="'+py(p.y).toFixed(1)+'" r="2.6" fill="'+groupColor(p.group)+'" fill-opacity=".67"><title>'+esc('用户 '+p.id+' · 群体 '+p.group)+'</title></circle>').join('');
+    const px=x=>40+(x-minX)/(maxX-minX || 1)*570,py=y=>300-(y-minY)/(maxY-minY || 1)*270;
+    const grid=[30,120,210,300].map(y=>'<path d="M40 '+y+'H610"/>').join('')+[40,230,420,610].map(x=>'<path d="M'+x+' 30V300"/>').join('');
+    const circles=sample.map(p=>'<circle cx="'+px(p.x).toFixed(1)+'" cy="'+py(p.y).toFixed(1)+'" r="4.5" fill="'+groupColor(p.group)+'" fill-opacity="1"><title>'+esc('用户 '+p.id+' · 群体 '+p.group)+'</title></circle>').join('');
     const groups=[...new Set(points.map(p=>String(p.group)))].sort((a,b)=>Number(a)-Number(b));
-    return '<div class="chart-shell"><svg viewBox="0 0 650 207" role="img" aria-label="'+esc(caption)+'二维坐标散点图"><g stroke="#edf1ed" stroke-width="1">'+grid+'</g><path d="M40 20V195H615" fill="none" stroke="#d8e1da"/>'+circles+'</svg><div class="chart-axes"><span>第 2 维 ↑</span><span>第 1 维 →</span></div><div class="chart-legend">'+groups.map(group=>'<span><i style="background:'+groupColor(group)+'"></i>群体 '+esc(group)+'</span>').join('')+'</div><p class="chart-caption">显示 '+numberText(sample.length)+' / '+numberText(points.length)+' 位用户'+'</p></div>';
+    return '<div class="chart-shell"><svg viewBox="0 0 650 320" role="img" aria-label="'+esc(caption)+'二维坐标散点图"><g stroke="#eee8dc" stroke-width="1">'+grid+'</g><path d="M40 25V300H615" fill="none" stroke="#dfd4c2"/>'+circles+'</svg><div class="chart-axes"><span>第 2 维 ↑</span><span>第 1 维 →</span></div><div class="chart-legend">'+groups.map(group=>'<span><i style="background:'+groupColor(group)+'"></i>群体 '+esc(group)+'</span>').join('')+'</div><p class="chart-caption">显示 '+numberText(sample.length)+' / '+numberText(Math.max(points.length,Number(totalCount) || 0))+' 位用户'+'</p></div>';
   }
+  function createAnalysisView(root,snapshot,bundle={}) {
+    root.analysisView?.destroy();
+    let reportData=bundle.report || snapshot.report || null,coordinateData=bundle.coordinates || null;
+    const focusedResults=Array.isArray(snapshot.results)?snapshot.results:[];
+    let currentResultTab=snapshot.tab || focusedResults.findLast(item=>resultNames[item.task])?.task || 'overview';
+    const presentationTaskId=snapshot.taskId;
+    let loadError=snapshot.error || '';
   function resultItems(kind){
     const query=focusedResults.filter(result=>result.task===kind),items=query.flatMap(safeResultItems);
     if(query.length)return {items,query,result:query[0],fromQuery:true};
@@ -249,13 +666,13 @@
       if(item.reason)return unavailableView(item);
       const metrics=item.test_metrics || item.test || {},prob=item.positive_probability,threshold=item.decision_threshold,value=prediction?pct(prob):formatMetric(metrics.pr_auc),barValue=prediction?prob:metrics.pr_auc;
       return '<section class="model-comparison '+(index?'secondary-model':'')+'"><div class="model-comparison-head"><div><span class="algorithm-order">'+resultIcon('classification')+'</span><h4>'+esc(algorithmName(item.algorithm))+'</h4></div><span class="prediction-label">'+(prediction?(item.predicted_high_rating===true?'预测高分':item.predicted_high_rating===false?'预测低于 4 分':'无法预测'):'测试 PR-AUC')+'</span></div><div class="probability-value">'+esc(value)+'</div><div class="probability-track"><i style="width:'+percentWidth(barValue)+'%"></i>'+(prediction && typeof threshold==='number'?'<span class="threshold-mark" style="left:'+percentWidth(threshold)+'%"><span>阈值 '+pct(threshold)+'</span></span>':'')+'</div><div class="model-small-metrics"><span>测试 F1 <strong>'+esc(formatMetric(metrics.f1))+'</strong></span><span>精确率 <strong>'+esc(formatMetric(metrics.precision))+'</strong></span><span>召回率 <strong>'+esc(formatMetric(metrics.recall))+'</strong></span></div>'+detailDisclosure(item,metrics)+'</section>';
-    }).join('')+'</div><details class="result-disclosure"><summary>模型说明</summary><p>'+(prediction?'概率表示模型对高分的预测，不是已发生的评分。':'PR-AUC 和 F1 为测试集指标；模型和阈值在验证集上选择。')+'</p></details>';
+    }).join('')+'</div><details class="result-disclosure"><summary>模型说明</summary><p>'+(prediction?'预测目标为 T1 后的一次评分是否达到 4 分，特征使用截至 T1 的历史记录。':'PR-AUC 和 F1 为测试集指标；模型和阈值在验证集上选择。')+'</p></details>';
   }
   function clusteringView(){
     const data=resultItems('clustering');if(!data.items.length)return unavailableView(data.result);
     const profile=data.result.profile,hasUser=data.fromQuery && (data.result.user_id || data.items.some(item=>item.user_id));
     const first=data.items[0],total=reportData?.clustering?.eligible_users || (first.segments || []).reduce((sum,item)=>sum+(item.size || 0),0);
-    let lead='<div class="analysis-lead"><h3>'+(hasUser?'用户 '+esc(asText(data.result.user_id || first.user_id))+' 的观影偏好':numberText(total)+' 位用户，'+((first.segments || []).length || '若干')+' 个群体')+'</h3></div>';
+    let lead='<div class="analysis-lead"><h3>'+(hasUser?'用户 '+esc(asText(data.result.user_id || first.user_id))+' 的观影偏好':numberText(total)+' 位用户，'+((first.segments || []).length || '若干')+' 个群体')+'</h3><p>各算法独立编号</p></div>';
     if(profile)lead+='<div class="profile-strip"><div><strong>'+numberText(profile.train_ratings)+'</strong><span>条训练期评分</span></div><div><strong>'+pct(profile.high_rate)+'</strong><span>历史高分占比</span></div><div class="profile-genres">'+tags((profile.top_genres || []).map(item=>item.name))+'</div></div>';
     return lead+'<div class="cluster-algorithms">'+data.items.map(item=>{
       if(item.reason)return unavailableView(item);
@@ -263,10 +680,10 @@
       const head='<div class="cluster-method-head"><h4>'+esc(algorithmName(item.algorithm))+'</h4><span>轮廓系数 <strong>'+esc(formatMetric(metrics.silhouette))+'</strong></span></div>';
       const rows=segments?'<div class="group-distribution">'+segments.map(segment=>'<div class="group-row"><span class="group-symbol" style="--group-color:'+groupColor(segment.cluster_id)+'">'+esc(asText(segment.cluster_id))+'</span><div class="group-description"><div class="group-name">'+esc((segment.top_genres || []).slice(0,2).map(name=>genreNames[name] || name).join(' · '))+'</div><div class="group-size-track"><i style="width:'+(total?segment.size/total*100:0)+'%;background:'+groupColor(segment.cluster_id)+'"></i></div></div><div class="group-count"><strong>'+numberText(segment.size)+'</strong><span>人 · '+(total?(segment.size/total*100).toFixed(1):'—')+'%</span></div></div>').join('')+'</div><details class="result-disclosure"><summary>群体说明与代表电影</summary>'+segments.map(segment=>'<div class="segment-evidence"><h5>群体 '+esc(asText(segment.cluster_id))+'</h5><p>'+esc(segment.summary || '')+'</p><p>'+esc((segment.representative_movies || []).slice(0,4).map(movie=>movie.title || movie.movie_id).join('、'))+'</p></div>').join('')+'</details>':(()=>{
         const segment=item.segment || {};
-        return '<div class="user-group"><span class="user-group-number" style="--group-color:'+groupColor(item.cluster_id)+'">'+esc(item.is_noise?'噪声':asText(item.cluster_id))+'</span><div><span class="lead-kicker">所属群体</span><h5>'+esc((segment.top_genres || []).slice(0,3).map(name=>genreNames[name] || name).join(' / ') || '群体偏好未登记')+'</h5><p>'+numberText(segment.size)+' 位用户属于这一群体</p></div></div>'+tags(segment.top_genres)+'<p class="segment-summary">'+esc(segment.summary || '')+'</p><details class="result-disclosure"><summary>代表电影</summary><p>'+esc((segment.representative_movies || []).slice(0,4).map(movie=>movie.title || movie.movie_id).join('、'))+'</p></details>';
+        return '<div class="user-group"><span class="user-group-number" style="--group-color:'+groupColor(item.cluster_id)+'">'+esc(item.is_noise?'噪声':asText(item.cluster_id))+'</span><div><span class="lead-kicker">所属群体</span><h5>'+esc((segment.top_genres || []).slice(0,3).map(name=>genreNames[name] || name).join(' / ') || '群体偏好未登记')+'</h5><p>'+numberText(segment.size)+' 位用户属于这一群体</p></div></div>'+tags(segment.top_genres)+'<p class="segment-summary">'+esc((segment.summary || '').split('；')[0])+'</p><details class="result-disclosure"><summary>代表电影</summary><p>'+esc((segment.representative_movies || []).slice(0,4).map(movie=>movie.title || movie.movie_id).join('、'))+'</p></details>';
       })();
       return '<section class="cluster-method">'+head+rows+detailDisclosure(item,metrics)+'</section>';
-    }).join('')+'</div><details class="result-disclosure"><summary>分群说明</summary><p>分群使用训练期评分。不同算法的群体编号不能直接对应，结果仅描述这一时期的观影偏好。</p></details>';
+    }).join('')+'</div><details class="result-disclosure"><summary>分群说明</summary><p>群体基于训练期的观影偏好，各算法独立编号。</p></details>';
   }
   function reductionView(){
     const data=resultItems('reduction');if(!data.items.length)return unavailableView(data.result);
@@ -275,33 +692,70 @@
     const plots=data.items.map(item=>{
       let points=item.coordinates;
       if(!points && coordinateData){points=(coordinateData.users || []).filter(user=>Array.isArray(user[item.algorithm])).map(user=>({user_id:user.user_id,x:user[item.algorithm][0],y:user[item.algorithm][1],cluster:user.clusters?.kmeans ?? 0}));}
-      return '<section class="projection-card"><div class="projection-heading"><h4>'+esc(algorithmName(item.algorithm))+'</h4><span>'+esc(item.actual_dimensions)+' 维表示</span></div>'+renderScatter(points,algorithmName(item.algorithm))+'</section>';
+      return '<section class="projection-card"><div class="projection-heading"><h4>'+esc(algorithmName(item.algorithm))+'</h4><span>'+esc(item.actual_dimensions)+' 维表示</span></div>'+renderScatter(points,algorithmName(item.algorithm),item.total_coordinates)+'</section>';
     }).join('');
     const comparisons=data.items.map(item=>{
       const rows=Object.entries(item.clustering_comparison || {}).map(([algorithm,comparison])=>'<tr><td>'+esc(algorithmName(algorithm))+'</td><td>'+esc(formatMetric(comparison.original_space?.silhouette))+'</td><td>'+esc(formatMetric(comparison.reduced_labels_original_space_silhouette))+'</td><td>'+esc(formatMetric(comparison.adjusted_rand_vs_original))+'</td></tr>').join('');
       return '<section class="reduction-evidence"><h4>'+esc(algorithmName(item.algorithm))+'</h4><div class="evidence-grid"><div><span>降维拟合耗时</span><strong>'+esc(formatMetric(item.fit_seconds))+' s</strong></div><div><span>坐标矩阵</span><strong>'+numberText(item.coordinate_matrix_bytes)+' bytes</strong></div>'+(item.information?.explained_variance_ratio_sum!=null?'<div><span>PCA 解释方差比例</span><strong>'+pct(item.information.explained_variance_ratio_sum)+'</strong></div>':'')+'</div><div class="table-wrap"><table><tr><th>聚类方法</th><th>原始标签轮廓</th><th>压缩标签轮廓¹</th><th>与原标签 ARI</th></tr>'+rows+'</table></div>'+detailDisclosure(item,item.params)+'</section>';
     }).join('');
-    return '<div class="compression-summary"><div class="compression-value">'+esc(original)+'<span>→</span>'+esc(dims)+'<small>维</small></div></div>'+comparison+'<div class="projection-grid">'+plots+'</div><details class="result-disclosure"><summary>图表与方法</summary><p>每个点代表一位用户，颜色对应原始画像的 KMeans 分组。图中显示前两维；超过 700 位用户时等距抽样。</p><p>信息保留按重建 R² 比较，散点的疏密不用于判断保留程度。</p>'+comparisons+'<p class="method-note">¹ 原始标签与压缩标签的轮廓均放回原画像空间计算。ARI 比较同一算法压缩前后的标签。</p></details>';
+    return '<div class="compression-summary"><div class="compression-value">'+esc(original)+'<span>→</span>'+esc(dims)+'<small>维</small></div></div>'+comparison+'<div class="projection-grid">'+plots+'</div><details class="result-disclosure"><summary>图表与方法</summary><p>每个点代表一位用户，颜色对应原始画像的 KMeans 分组。图中显示前两维；超过 700 位用户时等距抽样。</p><p>信息保留采用中心化重建 R²，散点图用于观察二维分布。</p>'+comparisons+'<p class="method-note">¹ 原始标签与压缩标签的轮廓均放回原画像空间计算。ARI 比较同一算法压缩前后的标签。</p></details>';
   }
   function unavailableView(result={}){
     const labels={insufficient_history:'训练期历史不足',unknown_id:'未找到对应用户或电影',known_training_pair:'该用户已在训练期评价过此电影',failed:'分析未完成',queued:'任务已提交',running:'任务正在运行'};
     return '<div class="empty-result"><span class="empty-result-symbol">'+resultIcon('overview')+'</span><h3>'+esc(labels[result.status] || '暂时没有可展示的结果')+'</h3><p>'+esc(result.reason || result.message || '可以让 Agent 查看现有任务，或指定一个已完成的分析。')+'</p></div>';
   }
   function paintAnalysisResults(){
-    const tabs=reportData?['overview','classification','clustering','reduction']:[...new Set(focusedResults.map(item=>item.task))].filter(kind=>resultNames[kind]);
+    const tabs=reportData && !focusedResults.length?['overview','classification','clustering','reduction']:[...new Set(focusedResults.map(item=>item.task))].filter(kind=>resultNames[kind]);
     if(!tabs.length)tabs.push('overview');if(!tabs.includes(currentResultTab))currentResultTab=tabs[0];
     const renderers={overview:overviewView,classification:classificationView,clustering:clusteringView,reduction:reductionView};
-    const content=(renderers[currentResultTab] || (()=>unavailableView(focusedResults.at(-1))))();
+    const content=(currentResultTab==='overview' && !reportData ? (focusedResults.length?unavailableView(focusedResults.at(-1)):'<div class="result-loading" role="status">'+(loadError?esc(loadError):'正在读取分析结果…')+'</div>') : (renderers[currentResultTab] || (()=>unavailableView(focusedResults.at(-1))))());
     const relevant=focusedResults.filter(item=>item.task===currentResultTab);
     const adverse=relevant.length && relevant.every(item=>!['completed','complete'].includes(item.status));
-    $('analysisResults').hidden=false;$('emptyConversation').hidden=true;
-    $('analysisResults').innerHTML='<article class="analysis-result"><div class="result-cover"><span class="result-emblem">'+resultIcon(currentResultTab)+'</span><div><h2>'+esc(resultNames[currentResultTab] || '分析结果')+'</h2></div><span class="result-state '+(adverse?'caution':'')+'">'+(adverse?'暂无结果':'已完成')+'</span></div>'+(tabs.length>1?'<div class="result-tabs" role="tablist" aria-label="分析结果">'+tabs.map(kind=>'<button type="button" role="tab" id="result-tab-'+kind+'" aria-selected="'+(kind===currentResultTab)+'" aria-controls="resultViewPanel" tabindex="'+(kind===currentResultTab?'0':'-1')+'" data-result-view="'+kind+'">'+({overview:'概览',classification:'高分预测',clustering:'用户分群',reduction:'降维对照'})[kind]+'</button>').join('')+'</div>':'')+'<div id="resultViewPanel" class="result-view" role="tabpanel" aria-labelledby="result-tab-'+currentResultTab+'">'+content+'</div><div class="result-bottom">'+evidenceFooter()+'</div></article>';
+    const failed=Boolean(loadError) && !reportData && !focusedResults.length;
+    const loading=!failed && !reportData && !focusedResults.length;
+    root.hidden=false;$('emptyConversation').hidden=true;
+    root.innerHTML='<article class="analysis-result"><div class="result-cover"><span class="result-emblem">'+resultIcon(currentResultTab)+'</span><div><h2>'+esc(resultNames[currentResultTab] || '分析结果')+'</h2></div><span class="result-state '+(adverse || failed?'caution':'')+'">'+(adverse?'暂无结果':failed?'未完成':loading?'处理中':'已完成')+'</span></div>'+(tabs.length>1?'<div class="result-tabs" role="tablist" aria-label="分析结果">'+tabs.map(kind=>'<button type="button" role="tab" id="'+root.id+'-tab-'+kind+'" aria-selected="'+(kind===currentResultTab)+'" aria-controls="'+root.id+'-panel" tabindex="'+(kind===currentResultTab?'0':'-1')+'" data-result-view="'+kind+'">'+({overview:'概览',classification:'高分预测',clustering:'用户分群',reduction:'降维对照'})[kind]+'</button>').join('')+'</div>':'')+'<div id="'+root.id+'-panel" class="result-view" '+(tabs.length>1?'role="tabpanel" aria-labelledby="'+root.id+'-tab-'+currentResultTab+'"':'role="region" aria-label="'+esc(resultNames[currentResultTab] || '分析结果')+'"')+'>'+content+'</div><div class="result-bottom">'+evidenceFooter()+'</div></article>';
   }
-  function renderAgentResult(result,append=false){
-    if(!result || typeof result!=='object')return;
-    focusedResults=append?[...focusedResults,result]:[result];
-    currentResultTab=resultNames[result.task]?result.task:currentResultTab;
-    paintAnalysisResults();
+    function selectTab(kind,focus=false) {
+      currentResultTab=kind;snapshot.tab=kind;paintAnalysisResults();saveSessions();
+      if(focus)root.querySelector('[role="tab"][aria-selected="true"]')?.focus({preventScroll:true});
+    }
+    function onResultClick(event) {
+      const button=event.target.closest('[data-result-view]');if(!button || !root.contains(button))return;
+      selectTab(button.dataset.resultView,event.detail===0);
+    }
+    function onResultKeydown(event) {
+      if(!event.target.matches('[role="tab"]') || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      event.preventDefault();const tabs=[...root.querySelectorAll('[role="tab"]')];
+      let index=tabs.indexOf(event.target);index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+      selectTab(tabs[index].dataset.resultView,true);
+    }
+    root.addEventListener('click',onResultClick);root.addEventListener('keydown',onResultKeydown);
+    const view={root,taskId:snapshot.taskId,render:paintAnalysisResults,selectTab,
+      destroy(){root.removeEventListener('click',onResultClick);root.removeEventListener('keydown',onResultKeydown);if(root.analysisView===view)delete root.analysisView;},
+      update(bundle){reportData=bundle.report || reportData;coordinateData=bundle.coordinates || coordinateData;loadError=bundle.error || '';paintAnalysisResults();}};
+    root.analysisView=view;paintAnalysisResults();return view;
+  }
+  function loadAnalysisBundle(id) {
+    if(!analysisBundles.has(id))analysisBundles.set(id,(async()=>{
+      try {
+        const report=await getJson('/api/analysis/tasks/'+encodeURIComponent(id)+'/report');
+        const coordinates=await getJson('/api/analysis/tasks/'+encodeURIComponent(id)+'/artifacts/coordinates.json').catch(()=>null);
+        return {report,coordinates};
+      } catch(error) {analysisBundles.delete(id);throw error;}
+    })());
+    return analysisBundles.get(id);
+  }
+  function attachMessageResults(box,message) {
+    const snapshot=message.analysis;if(!snapshot)return;
+    const root=document.createElement('div');root.className='message-results';root.id='result-'+message.id;
+    box.querySelector('.message-content').append(root);
+    const view=createAnalysisView(root,snapshot);resultViews.set(root.id,view);
+    $('analysisResults').hidden=true;
+    if(snapshot.taskId && !snapshot.pending && !snapshot.error)loadAnalysisBundle(snapshot.taskId).then(bundle=>{
+      if(resultViews.get(root.id)===view)view.update(bundle);
+    }).catch(error=>{if(resultViews.get(root.id)===view)view.update({error:'关联报告读取失败：'+error.message});});
+    return view;
   }
   function renderAnalysisStatus(state) {
     const status=state.status || 'queued'; const stage=state.stage || '等待运行';
@@ -311,10 +765,16 @@
     $('analysisStage').textContent=status==='complete' ? '产物已发布' : status==='failed' ? '执行失败' : stage;
     $('analysisHint').textContent=status==='failed' ? (state.error || state.progress || '分析任务失败') : state.progress || '正在读取任务进展。';
     if(status==='running'||status==='queued') {
-      if(presentationTaskId && presentationTaskId!==analysisTaskId){reportData=null;coordinateData=null;focusedResults=[];$('analysisResults').hidden=true;}
+      if(presentationTaskId && presentationTaskId!==analysisTaskId){reportData=null;coordinateData=null;$('analysisResults').hidden=true;}
       $('analysisActivity').hidden=false;
       $('analysisActivity').innerHTML='<div class="task-progress-card"><div class="task-progress-line"><span class="task-state-dot"></span><strong>Agent 正在执行</strong><span>'+esc(status==='queued'?'等待执行':stage)+'</span></div><p>'+esc(state.progress || '正在准备分析任务')+'</p><div class="task-progress-track indeterminate"><i></i></div></div>';
     } else if(status==='failed') {
+      const reason='分析未完成：'+(state.error || state.progress || '请查看任务状态');
+      for(const message of currentSession()?.messages || [])if(message.analysis?.taskId===analysisTaskId && message.analysis.pending) {
+        message.analysis.pending=false;message.analysis.error=reason;
+      }
+      for(const view of resultViews.values())if(view.taskId===analysisTaskId)view.update({error:reason});
+      saveSessions();
       $('analysisActivity').hidden=false;
       $('analysisActivity').innerHTML='<div class="task-progress-card failed"><div class="task-progress-line"><span class="task-state-dot"></span><strong>分析未完成</strong><span>'+esc(stage)+'</span></div><p>'+esc(state.error || state.progress || '请查看任务状态')+'</p></div>';
     } else if(status==='complete') $('analysisActivity').hidden=true;
@@ -334,21 +794,20 @@
   async function renderAnalysisReport(report,display='restore') {
     if(!report || typeof report!=='object' || !analysisTaskId)return;
     const source=report.source || {},id=analysisTaskId;
-    if(presentationTaskId!==id){focusedResults=[];currentResultTab='overview';coordinateData=null;}
+    const sessionId=activeSessionId;
+    if(presentationTaskId!==id)coordinateData=null;
     presentationTaskId=id;reportData=report;
     if(/^[0-9a-f]{12}$/i.test(source.task_id || ''))preferredSourceTaskId=source.task_id;
-    try {
-      coordinateData=await getJson('/api/analysis/tasks/'+encodeURIComponent(id)+'/artifacts/coordinates.json');
-      if(id!==analysisTaskId)return;
-    } catch(_){coordinateData=null;}
+    const bundle=await loadAnalysisBundle(id);
+    if(id!==analysisTaskId || sessionId!==activeSessionId)return;
+    coordinateData=bundle.coordinates;
     $('timeline').hidden=true;$('results').hidden=true;
-    if(display==='overview'){focusedResults=[];currentResultTab='overview';}
-    else {
-      const saved=currentSession()?.lastResult;
-      focusedResults=Array.isArray(saved)?saved:saved?[saved]:focusedResults;
-      if(focusedResults.length && resultNames[focusedResults.at(-1).task])currentResultTab=focusedResults.at(-1).task;
-    }
-    paintAnalysisResults();
+    for(const message of currentSession()?.messages || [])if(message.analysis?.taskId===id)message.analysis.pending=false;
+    for(const view of resultViews.values())if(view.taskId===id)view.update(bundle);
+    saveSessions();
+    if(!currentSession()?.messages.some(message=>message.analysis)) {
+      overviewViewController=createAnalysisView($('analysisResults'),{taskId:id,results:[],tab:'overview'},bundle);
+    } else $('analysisResults').hidden=true;
     if (!taskId && /^[0-9a-f]{12}$/i.test(source.task_id || '')) { taskId=source.task_id; localStorage.lab2TaskId=taskId; touchSession(); poll(); }
     if ([...$('sourceTaskSelect').options].some(option=>option.value===source.task_id)) $('sourceTaskSelect').value=source.task_id;
     else if (preferredSourceTaskId) loadSourceTasks(preferredSourceTaskId);
@@ -378,7 +837,7 @@
         while(i+1<lines.length && lines[i+1].trim().startsWith('|')) html+='<tr>'+cells(lines[++i]).map(x=>'<td>'+inline(x)+'</td>').join('')+'</tr>';
         html+='</tbody></table></div>';
       } else if(heading){flush();closeList();html+='<h3>'+inline(heading[1])+'</h3>';}
-      else if(item){flush(); const tag=item[1]?'ul':'ol';if(list!==tag){closeList();html+='<'+tag+'>';list=tag;}html+='<li>'+inline(item[2])+'</li>';}
+      else if(item){flush(); const tag=item[1]?'ul':'ol';if(list!==tag){closeList();const ordinal=tag==='ol'?Number(line.match(/^\s*(\d+)[.)、]/)?.[1] || 1):1;html+='<'+tag+(tag==='ol' && ordinal>1?' start="'+ordinal+'"':'')+'>';list=tag;}html+='<li>'+inline(item[2])+'</li>';}
       else if(!line.trim()){flush();closeList();}
       else {closeList();paragraph.push(line);}
     }
@@ -394,7 +853,8 @@
     const timestamp=now();box.classList.remove('pending','streaming');box.removeAttribute('aria-busy');
     box.querySelector('.bubble').innerHTML=formatMessage(content);box.querySelector('.pending-steps')?.remove();
     const time=document.createElement('time');time.textContent=timestamp;box.querySelector('.message-content').append(time);
-    const session=currentSession();if(session){session.messages.push({role:'assistant',content:String(content),time:timestamp});touchSession();}
+    const message={id:newMessageId(),role:'assistant',content:String(content),time:timestamp};box.messageRecord=message;box.dataset.messageId=message.id;
+    const session=currentSession();if(session){session.messages.push(message);touchSession();}
     return box;
   }
   async function streamAgent(payload,pending) {
@@ -439,17 +899,20 @@
       if(buffer.trim())handle(buffer);if(!answer)throw Error('连接已断开，未收到完整回复。');return answer;
     } finally {if(frame!==null){cancelAnimationFrame(frame);renderContent();}reader.releaseLock();}
   }
-  function addMessage(role, content, persist=true, timestamp=now()) {
+  function addMessage(role, content, persist=true, timestamp=now(),savedMessage=null) {
     $('emptyConversation').hidden = true;
     const box=document.createElement('div'); box.className='message '+role;
+    const message=savedMessage || {id:newMessageId(),role,content:String(content),time:timestamp};box.messageRecord=message;box.dataset.messageId=message.id;
     box.innerHTML=`<div class="avatar" aria-hidden="true">${icon(role)}</div><div class="message-content"><div class="bubble">${role==='assistant' ? formatMessage(content) : esc(content)}</div><time>${esc(timestamp)}</time></div>`;
     $('messages').append(box); box.scrollIntoView({block:'nearest',behavior:'smooth'});
-    if (persist) { const session=currentSession(); if (session) { session.messages.push({role,content:String(content),time:timestamp}); touchSession(); } }
+    if (persist) { const session=currentSession(); if (session) { session.messages.push(message); touchSession(); } }
     return box;
   }
   function resetView(clearActive=true) {
     taskId=null; analysisTaskId=null; lastStatus=null; lastAnalysisStatus=null; preferredSourceTaskId=null;
-    reportData=null;coordinateData=null;focusedResults=[];currentResultTab='overview';presentationTaskId=null;
+    reportData=null;coordinateData=null;presentationTaskId=null;
+    for(const view of resultViews.values())view.destroy();
+    resultViews.clear();overviewViewController?.destroy();overviewViewController=null;
     if (timer) clearInterval(timer); timer=null; if (analysisTimer) clearInterval(analysisTimer); analysisTimer=null;
     if (clearActive) activeSessionId=null; $('sourceTaskInput').value='';
     localStorage.removeItem('lab2TaskId'); $('messages').replaceChildren(); $('emptyConversation').hidden=false;
@@ -508,22 +971,25 @@
       let reply=data.reply || (data.status==='unavailable' ? '当前分析不可用。' : '请求已收到。');
       if(data.error && pending.dataset.streamText)reply=pending.dataset.streamText+'\n\n'+reply;
       const answerBox=finishStreamMessage(pending,reply);
-      if (data.tool_events) renderToolEvents(data.tool_events);
+      if (data.tool_events?.length) {answerBox.messageRecord.toolEvents=data.tool_events;renderToolEvents(data.tool_events,answerBox);}
       if (data.task_id) { const changed=taskId!==data.task_id; taskId=data.task_id; localStorage.lab2TaskId=taskId; if (changed) { $('results').hidden=true; renderPendingScores(); } touchSession(); await poll(); }
-      if (data.analysis_task_id) { const changed=analysisTaskId!==data.analysis_task_id; analysisTaskId=data.analysis_task_id; if (changed) session.lastResult=null; touchSession(); if (changed || lastAnalysisStatus!=='complete') await pollAnalysis(); }
+      if (data.analysis_task_id) { const changed=analysisTaskId!==data.analysis_task_id; analysisTaskId=data.analysis_task_id; if (changed) $('analysisResults').hidden=true; touchSession(); if (changed || lastAnalysisStatus!=='complete') await pollAnalysis(); }
       const returned=(Array.isArray(data.results)&&data.results.length ? data.results.map(entry=>entry.result) : data.result ? [data.result] : []).filter(item=>item && (item.task || item.results || item.reason));
-      if (returned.length) {
-        focusedResults=[];
-        const cards=[];
-        for (const item of returned) {
-          if (item.task==='analysis_report' && item.report) await renderAnalysisReport(item.report,'overview');
-          else if ((item.task==='governance_report' || item.task==='governance') && item.report) {taskId=item.report.task_id || sourceTaskId;touchSession();await poll();renderReport(item.report);}
-          else if (item.task!=='workspace') { renderAgentResult(item,true); cards.push(item); }
-        }
-        session.lastResult=cards.length ? cards : null; touchSession();
+      const cards=[],messageRecord=answerBox.messageRecord;
+      let turnReport=null;
+      for(const item of returned) {
+        if(item.task==='analysis_report' && item.report)turnReport=item.report;
+        else if((item.task==='governance_report' || item.task==='governance') && item.report) {taskId=item.report.task_id || sourceTaskId;touchSession();await poll();renderReport(item.report);}
+        else if(item.task!=='workspace' && (resultNames[item.task] || item.reason))cards.push(item);
       }
+      if(cards.length || turnReport || (data.analysis_task_id && lastAnalysisStatus!=='complete')) {
+        messageRecord.analysis={taskId:data.analysis_task_id || analysisTaskId || null,results:cards,pending:lastAnalysisStatus==='running' || lastAnalysisStatus==='queued',
+          ...(turnReport?{report:turnReport,tab:'overview'}:{})};
+        attachMessageResults(answerBox,messageRecord);
+      }
+      touchSession();
       if (data.error==='missing_api_key') notice('当前服务未配置 DeepSeek，请设置后重启。',true);
-      answerBox.scrollIntoView({block:'start',behavior:'smooth'});
+      (answerBox.querySelector('.message-results') || answerBox).scrollIntoView({block:'start',behavior:'smooth'});
     } catch(e) {
       const partial=pending.dataset.streamText;
       if(partial)finishStreamMessage(pending,partial+'\n\n回复中断：'+e.message);
@@ -569,23 +1035,22 @@
     $('versions').textContent = `原始数据版本 ${report.raw_data_version} · 清洗数据版本 ${report.clean_data_version} · 规则 ${report.rule_version} · 评分配置 ${report.score_config_version || '未记录'} · T1 ${report.time_boundaries.T1_utc} · T2 ${report.time_boundaries.T2_utc} · 引擎 ${report.engine}${report.hadoop_mode ? ' (' + report.hadoop_mode + ')' : ''}`;
     const base = '/api/tasks/' + encodeURIComponent(taskId);
     $('evidenceState').textContent = '已生成'; $('evidenceState').className = 'state-pill complete'; $('evidenceHint').textContent = '以下文件来自本次任务的实际运行结果。';
-    $('evidenceLinks').innerHTML = `<a href="${base}/report" target="_blank" rel="noopener">评估报告 ↗</a><a href="${base}/manifest" target="_blank" rel="noopener">产物清单 ↗</a>` + (report.unresolved_ties?.total_retained ? `<a href="${base}/unresolved" target="_blank" rel="noopener">未核验冲突 ↗</a>` : '<span>无未核验冲突</span>');
+    $('evidenceLinks').innerHTML = `<a href="${base}/report" target="_blank" rel="noopener">评估报告</a><a href="${base}/manifest" target="_blank" rel="noopener">产物清单</a>` + (report.unresolved_ties?.total_retained ? `<a href="${base}/unresolved" target="_blank" rel="noopener">未核验冲突</a>` : '<span>无未核验冲突</span>');
     Promise.all(['users','movies','ratings'].map(t => getJson(base + '/sample?table=' + t))).then(items => $('samples').textContent = items.map(x => x.table + '\n' + x.sample.join('\n')).join('\n\n')).catch(e => $('samples').textContent = '样例读取失败：' + e.message);
   }
-  $('analysisResults').addEventListener('click',event=>{
-    const button=event.target.closest('[data-result-view]');if(!button)return;
-    currentResultTab=button.dataset.resultView;paintAnalysisResults();
-    if(event.detail===0)$('analysisResults').querySelector('[role="tab"][aria-selected="true"]')?.focus({preventScroll:true});
-  });
-  $('analysisResults').addEventListener('keydown',event=>{
-    if(!event.target.matches('[role="tab"]') || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
-    event.preventDefault();const tabs=[...$('analysisResults').querySelectorAll('[role="tab"]')];
-    let index=tabs.indexOf(event.target);index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
-    currentResultTab=tabs[index].dataset.resultView;paintAnalysisResults();$('analysisResults').querySelector('[role="tab"][aria-selected="true"]')?.focus({preventScroll:true});
+  function setInspectorOpen(open) {
+    document.querySelector('.app-shell').classList.toggle('inspector-open',open);
+    $('inspector').hidden=!open;$('inspectorToggle').setAttribute('aria-expanded',String(open));
+  }
+  $('inspectorToggle').addEventListener('click',()=>setInspectorOpen($('inspector').hidden));
+  $('inspectorClose').addEventListener('click',()=>{setInspectorOpen(false);$('inspectorToggle').focus();});
+  $('configClose').addEventListener('click',()=>{$('configPanel').hidden=true;$('configToggle').setAttribute('aria-expanded','false');$('configToggle').focus();});
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape' && !$('configPanel').hidden){$('configPanel').hidden=true;$('configToggle').setAttribute('aria-expanded','false');$('configToggle').focus();}
   });
   $('send').addEventListener('click',send);
   $('newTask').addEventListener('click',()=>{resetView();$('prompt').focus();});
-  $('prompt').addEventListener('input',()=>{const input=$('prompt'); input.style.height='58px';input.style.height=Math.min(180,Math.max(58,input.scrollHeight))+'px';});
+  $('prompt').addEventListener('input',()=>{notice('');const input=$('prompt'); input.style.height='58px';input.style.height=Math.min(180,Math.max(58,input.scrollHeight))+'px';});
   $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send();}});
   $('configToggle').addEventListener('click',()=>{const open=$('configPanel').hidden;$('configPanel').hidden=!open;$('configToggle').setAttribute('aria-expanded',String(open));});
   document.querySelectorAll('.starter').forEach(button=>button.addEventListener('click',()=>{$('prompt').value=button.dataset.prompt;$('prompt').focus();}));
@@ -599,11 +1064,12 @@
     try {const data=await getJson('/api/analysis/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_task_id:source,analysis_config:analysisConfig,user_ids:userIds})});
       if (!data.analysis_task_id) throw Error(data.reply || '未返回分析任务 ID');
       if (!currentSession()) createSession('分析任务 · '+source);
-      analysisTaskId=data.analysis_task_id; currentSession().lastResult=null; touchSession(); renderAnalysisStatus({analysis_task_id:analysisTaskId,status:data.status || 'queued',stage:'queued',progress:data.reply || '来源清洗任务 '+source+' · 等待运行'}); await pollAnalysis();
+      analysisTaskId=data.analysis_task_id; touchSession(); renderAnalysisStatus({analysis_task_id:analysisTaskId,status:data.status || 'queued',stage:'queued',progress:data.reply || '来源清洗任务 '+source+' · 等待运行'}); await pollAnalysis();
     } catch(e) {notice('分析任务未启动：'+e.message,true);updateStartAnalysisAvailability();}
   });
   $('sourceTaskSelect').addEventListener('change',updateStartAnalysisAvailability);
   $('sourceTaskInput').addEventListener('input',updateStartAnalysisAvailability);
+  document.querySelectorAll('.config-input').forEach(input=>input.addEventListener('input',()=>notice('')));
   $('targetDimensions').addEventListener('input',()=>{$('informationThreshold').disabled=Boolean($('targetDimensions').value);});
   $('informationThreshold').addEventListener('input',()=>{$('targetDimensions').disabled=Boolean($('informationThreshold').value);});
   function closePickers(except) {
@@ -660,6 +1126,7 @@
     refresh();
   }
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.picker'))closePickers();});
+  sessions.forEach(normalizeSession);
   renderPendingScores(); renderSessionList();
   getJson('/api/config').then(config=>{
     for (const [id,key,selected] of [['dataVersion','data_versions','data_version'],['ruleVersion','rule_versions','rule_version'],['scoreConfig','score_config_versions','score_config_version']]) {

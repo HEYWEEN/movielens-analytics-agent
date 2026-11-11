@@ -19,6 +19,13 @@ case "$mode" in
   *) printf 'Unknown option: %s\n' "$mode" >&2; exit 2 ;;
 esac
 
+# Project-local settings are exported only to this launcher and its child process.
+if [ -f "$project_dir/.env" ]; then
+  set -a
+  . "$project_dir/.env"
+  set +a
+fi
+
 if ! command -v python3 >/dev/null 2>&1; then
   printf 'Python 3.10+ is required.\n' >&2
   exit 1
